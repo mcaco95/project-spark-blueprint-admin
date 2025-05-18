@@ -28,16 +28,24 @@ export interface Task {
   projectId?: string | null;
   project?: string;
   assignees: string[];
+  
+  // Date and time properties (optional for Kanban tasks)
   startDate?: Date | string;
   endDate?: Date | string;
   duration?: number;
   time?: string;
   date?: string;
+  
+  // Task view flags
+  showInKanban?: boolean; 
+  showInTimeline?: boolean;
+  
   recurrence?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
   comments?: TaskComment[];
   color?: string; // Added to support custom task colors
 }
 
+// For backward compatibility with the old structure
 export interface TimelineTask extends Task {
   date: string;
   time: string;

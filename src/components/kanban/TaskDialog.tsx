@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -23,7 +25,7 @@ import { Task } from '@/types/task';
 import { useTaskContext } from '@/contexts/TaskContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { X, Calendar, Clock } from 'lucide-react';
 
 interface TaskDialogProps {
   isOpen: boolean;
@@ -62,6 +64,14 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
   const [selectedAssignee, setSelectedAssignee] = React.useState<string>('');
   const [projectId, setProjectId] = React.useState<string>('');
   const [projectName, setProjectName] = React.useState<string>('');
+  
+  // New state for task view options
+  const [showInKanban, setShowInKanban] = React.useState<boolean>(true);
+  const [showInTimeline, setShowInTimeline] = React.useState<boolean>(false);
+  const [date, setDate] = React.useState<string>('');
+  const [time, setTime] = React.useState<string>('');
+  const [duration, setDuration] = React.useState<number>(30);
+  const [showTimelineFields, setShowTimelineFields] = React.useState<boolean>(false);
 
   // Reset form or populate with task data when opening
   useEffect(() => {
@@ -74,12 +84,28 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
         setAssignees(editingTask.assignees || []);
         setProjectId(editingTask.projectId || '1');
         setProjectName(editingTask.project || 'Website Redesign');
+        
+        // Set view options
+        setShowInKanban(editingTask.showInKanban !== false);
+        setShowInTimeline(editingTask.showInTimeline === true);
+        
+        // Set timeline fields if available
+        setDate(editingTask.date || '');
+        setTime(editingTask.time || '');
+        setDuration(editingTask.duration || 30);
+        setShowTimelineFields(editingTask.showInTimeline === true || !!(editingTask.date && editingTask.time));
       } else {
         setTitle('');
         setDescription('');
         setStatus('todo');
         setPriority('medium');
         setAssignees([]);
+        setShowInKanban(true);
+        setShowInTimeline(false);
+        setDate('');
+        setTime('');
+        setDuration(30);
+        setShowTimelineFields(false);
         
         // Use defaultProject if provided
         if (defaultProject) {
@@ -105,7 +131,16 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
       assignees,
       projectId,
       project: projectName,
+      showInKanban,
+      showInTimeline,
     };
+
+    // Add timeline-specific fields if showing in timeline
+    if (showInTimeline) {
+      taskData.date = date;
+      taskData.time = time;
+      taskData.duration = duration;
+    }
     
     let taskId = '';
     
@@ -143,6 +178,11 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
     const project = availableProjects.find(p => p.id === value);
     setProjectId(value);
     setProjectName(project ? project.name : '');
+  };
+
+  const handleShowInTimelineChange = (checked: boolean) => {
+    setShowInTimeline(checked);
+    setShowTimelineFields(checked);
   };
 
   return (
@@ -235,6 +275,78 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* View Options */}
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label className="text-right pt-2">View Options</Label>
+              <div className="col-span-3 space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="show-in-kanban" 
+                    checked={showInKanban} 
+                    onCheckedChange={(checked) => setShowInKanban(checked as boolean)}
+                  />
+                  <Label htmlFor="show-in-kanban">Show in Kanban board</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="show-in-timeline" 
+                    checked={showInTimeline}
+                    onCheckedChange={(checked) => handleShowInTimelineChange(checked as boolean)}
+                  />
+                  <Label htmlFor="show-in-timeline">Show in Timeline view</Label>
+                </div>
+              </div>
+            </div>
+            
+            {/* Timeline Fields */}
+            {showTimelineFields && (
+              <>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="date" className="text-right">Date</Label>
+                  <div className="col-span-3 flex items-center">
+                    <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="date"
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="flex-1"
+                      required={showInTimeline}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="time" className="text-right">Time</Label>
+                  <div className="col-span-3 flex items-center">
+                    <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="time"
+                      type="time"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      className="flex-1"
+                      required={showInTimeline}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="duration" className="text-right">Duration (min)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    min={5}
+                    step={5}
+                    value={duration}
+                    onChange={(e) => setDuration(parseInt(e.target.value) || 30)}
+                    className="col-span-3"
+                    required={showInTimeline}
+                  />
+                </div>
+              </>
+            )}
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="assignees" className="text-right">Assignees</Label>

@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { Task } from '@/types/task';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, Timer } from 'lucide-react';
+import { Pencil, Trash2, Timer, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useTaskContext } from '@/contexts/TaskContext';
 import { usePomodoroContext } from '@/contexts/PomodoroContext';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { format } from 'date-fns';
 
 interface TaskCardProps {
   task: Task;
@@ -74,6 +75,14 @@ export function TaskCard({ task, isDragging, onEdit }: TaskCardProps) {
     ? (taskPomodoro.completedPomodoros / taskPomodoro.estimatedPomodoros) * 100
     : 0;
 
+  const formatDate = (date: string) => {
+    try {
+      return format(new Date(date), 'MMM dd');
+    } catch (e) {
+      return date;
+    }
+  };
+
   return (
     <Card 
       className={`mb-3 ${isDragging ? 'opacity-50 border-dashed' : ''} cursor-pointer hover:shadow-md transition-shadow ${isCurrentPomodoroTask ? 'border-primary border-2' : ''}`}
@@ -96,6 +105,14 @@ export function TaskCard({ task, isDragging, onEdit }: TaskCardProps) {
           {task.project && (
             <Badge variant="secondary" className="text-xs">
               {task.project}
+            </Badge>
+          )}
+          
+          {/* Show timeline indicator if task is also in timeline view */}
+          {task.showInTimeline && (
+            <Badge variant="outline" className="text-xs">
+              <Calendar className="h-3 w-3 mr-1" />
+              {task.date && formatDate(task.date)}
             </Badge>
           )}
           
