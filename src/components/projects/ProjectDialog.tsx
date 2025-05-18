@@ -104,11 +104,19 @@ export function ProjectDialog({ isOpen, onClose, editingProject, onSave }: Proje
   }, [editingProject, form]);
 
   const onSubmit = (data: ProjectFormValues) => {
+    // Fix: Ensure name is always provided in the project object
     const projectToSave: Project = {
       id: editingProject?.id || uuidv4(),
+      name: data.name, // Make sure name is explicitly assigned
+      description: data.description,
+      status: data.status,
+      priority: data.priority,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      progress: data.progress || 0,
+      teamMembers: data.teamMembers,
       createdBy: editingProject?.createdBy || 'Current User',
       createdAt: editingProject?.createdAt || new Date(),
-      ...data,
       tasks: editingProject?.tasks || [],
       comments: editingProject?.comments || [],
     };

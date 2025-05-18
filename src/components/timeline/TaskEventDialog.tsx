@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -75,7 +74,7 @@ const TaskFormSchema = z.object({
   project: z.string(),
   assignees: z.array(z.string()).min(1, 'At least one assignee is required'),
   description: z.string().optional(),
-  recurrence: z.string().optional(),
+  recurrence: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']).optional(),
 });
 
 type TaskFormValues = z.infer<typeof TaskFormSchema>;
@@ -114,7 +113,7 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
         project: task.projectId || task.project,
         assignees: task.assignees,
         description: task.description || '',
-        recurrence: task.recurrence,
+        recurrence: task.recurrence as 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | undefined,
       });
     } else {
       form.reset(defaultValues);
