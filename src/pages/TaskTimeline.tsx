@@ -1,20 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { format, startOfWeek, endOfWeek, addDays, subDays, subWeeks, addWeeks, parseISO } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addDays, subDays, subWeeks, addWeeks, parseISO, isToday, getDay, isWithinInterval } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Calendar, 
-  Plus, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Plus,
   Filter,
   ArrowDown,
-  ArrowUp
+  ArrowUp,
+  ListFilter,
+  Clock
 } from 'lucide-react';
 import {
   Select,
@@ -32,8 +34,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TaskEventDialog } from '@/components/timeline/TaskEventDialog';
 import { Task, ViewMode } from '@/types/task';
 import { useTaskContext } from '@/contexts/TaskContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
-const priorityColors: Record<string, string> = {
+// Custom color mapping based on project
+const projectColors: Record<string, string> = {
   'Website Redesign': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   'Mobile App Development': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
   'Marketing Campaign': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
@@ -43,7 +48,7 @@ const priorityColors: Record<string, string> = {
 const TaskTimeline = () => {
   const { t, i18n } = useTranslation(['common', 'tasks']);
   const locale = i18n.language === 'es' ? es : enUS;
-  const { tasks, updateTask, addTask } = useTaskContext();
+  const { tasks, updateTask, addTask, deleteTask } = useTaskContext();
   
   // Use a specific date for the demo so it matches our mock data
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(parseISO('2025-05-20')));
@@ -52,6 +57,35 @@ const TaskTimeline = () => {
   const [filterUser, setFilterUser] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(true);
+  
+  // Use effect to handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Add task with "a" key
+      if (e.key === 'a' && !isDialogOpen) {
+        e.preventDefault();
+        handleAddTask();
+      }
+      
+      // Navigate with arrow keys
+      if (e.key === 'ArrowLeft' && e.altKey) {
+        e.preventDefault();
+        navigatePrevious();
+      }
+      
+      if (e.key === 'ArrowRight' && e.altKey) {
+        e.preventDefault();
+        navigateNext();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDialogOpen]);
   
   // Generate days based on view mode
   const getDaysForView = () => {
@@ -139,10 +173,11 @@ const TaskTimeline = () => {
     }
   };
 
-  // Filter tasks based on selected filters
+  // Enhanced filtering with multiple options
   const filteredTasks = tasks.filter(task => {
     let matchesProject = true;
     let matchesUser = true;
+    let matchesStatus = true;
     
     if (filterProject) {
       matchesProject = task.project === filterProject;
@@ -152,13 +187,66 @@ const TaskTimeline = () => {
       matchesUser = task.assignees && task.assignees.includes(filterUser);
     }
     
-    return matchesProject && matchesUser;
+    if (!showCompleted) {
+      matchesStatus = task.status !== 'completed' && task.status !== 'done';
+    }
+    
+    return matchesProject && matchesUser && matchesStatus;
   });
 
-  // Get tasks for a specific day
+  // Get tasks for a specific day with time sorting
   const getTasksForDay = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return filteredTasks.filter(task => task.date === dateStr);
+    const tasksForDay = filteredTasks.filter(task => task.date === dateStr);
+    
+    // Sort tasks by time
+    return tasksForDay.sort((a, b) => {
+      if (!a.time) return 1;
+      if (!b.time) return -1;
+      return a.time.localeCompare(b.time);
+    });
+  };
+
+  // Handle recurring tasks
+  const handleRecurringTaskUpdate = (task: Task) => {
+    if (!task.recurrence) return;
+    
+    // Create next occurrence based on recurrence pattern
+    const taskDate = parseISO(task.date as string);
+    let nextDate: Date;
+    
+    switch (task.recurrence) {
+      case 'daily':
+        nextDate = addDays(taskDate, 1);
+        break;
+      case 'weekly':
+        nextDate = addDays(taskDate, 7);
+        break;
+      case 'monthly':
+        // Approximate a month as 30 days
+        nextDate = addDays(taskDate, 30);
+        break;
+      case 'quarterly':
+        // Approximate a quarter as 90 days
+        nextDate = addDays(taskDate, 90);
+        break;
+      case 'yearly':
+        // Approximate a year as 365 days
+        nextDate = addDays(taskDate, 365);
+        break;
+      default:
+        return;
+    }
+    
+    // Create new task for next occurrence
+    const newTask: Task = {
+      ...task,
+      id: `${task.id}-${format(nextDate, 'yyyyMMdd')}`,
+      date: format(nextDate, 'yyyy-MM-dd'),
+      status: 'todo'
+    };
+    
+    addTask(newTask);
   };
 
   const handleAddTask = () => {
@@ -174,15 +262,72 @@ const TaskTimeline = () => {
   const handleSaveTask = (task: Task) => {
     if (task.id && tasks.some(t => t.id === task.id)) {
       updateTask(task);
+      
+      // If task is marked as completed and it's recurring, create next occurrence
+      if ((task.status === 'completed' || task.status === 'done') && task.recurrence) {
+        handleRecurringTaskUpdate(task);
+        toast.success('Task completed! Next occurrence has been scheduled.');
+      }
     } else {
       addTask(task);
     }
     setIsDialogOpen(false);
   };
+  
+  const handleDeleteTask = (task: Task) => {
+    deleteTask(task.id);
+    toast.success('Task deleted successfully');
+  };
+
+  const getTaskColor = (task: Task) => {
+    // Use custom color if defined
+    if (task.color) return task.color;
+    
+    // Otherwise use project color
+    return projectColors[task.project || ''] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+  };
+
+  // Function to determine if the time slot has overlap with other tasks
+  const hasTaskOverlap = (date: Date, task: Task) => {
+    if (!task.time || !task.duration) return false;
+    
+    const taskStart = task.time;
+    const [taskHour, taskMinute] = taskStart.split(':').map(Number);
+    
+    // Check all tasks for this day
+    const tasksForDay = getTasksForDay(date).filter(t => t.id !== task.id);
+    
+    return tasksForDay.some(otherTask => {
+      if (!otherTask.time || !otherTask.duration) return false;
+      
+      const otherStart = otherTask.time;
+      const [otherHour, otherMinute] = otherStart.split(':').map(Number);
+      
+      // Convert times to minutes for easier comparison
+      const taskStartMinutes = taskHour * 60 + taskMinute;
+      const taskEndMinutes = taskStartMinutes + (task.duration || 0);
+      
+      const otherStartMinutes = otherHour * 60 + otherMinute;
+      const otherEndMinutes = otherStartMinutes + (otherTask.duration || 0);
+      
+      // Check for overlap
+      return (
+        (taskStartMinutes >= otherStartMinutes && taskStartMinutes < otherEndMinutes) || 
+        (taskEndMinutes > otherStartMinutes && taskEndMinutes <= otherEndMinutes) ||
+        (taskStartMinutes <= otherStartMinutes && taskEndMinutes >= otherEndMinutes)
+      );
+    });
+  };
+
+  // Jump to today
+  const goToToday = () => {
+    setCurrentWeekStart(startOfWeek(new Date()));
+    toast.success('Navigated to current week');
+  };
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-50 bg-background p-6 overflow-auto' : ''}`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t('timeline')}</h1>
@@ -267,6 +412,18 @@ const TaskTimeline = () => {
                   ))}
                 </div>
                 
+                <h4 className="font-medium">{t('taskStatus', { ns: 'tasks' })}</h4>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="show-completed" 
+                    checked={showCompleted}
+                    onCheckedChange={(checked) => setShowCompleted(!!checked)}
+                  />
+                  <label htmlFor="show-completed" className="text-sm">
+                    {t('showCompleted', { ns: 'tasks' })}
+                  </label>
+                </div>
+                
                 <div className="flex justify-between">
                   <Button 
                     variant="outline" 
@@ -274,6 +431,7 @@ const TaskTimeline = () => {
                     onClick={() => {
                       setFilterProject(null);
                       setFilterUser(null);
+                      setShowCompleted(true);
                     }}
                   >
                     {t('clearAll', { ns: 'common' })}
@@ -287,6 +445,9 @@ const TaskTimeline = () => {
           </Popover>
 
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsFullScreen(!isFullScreen)}>
+              {isFullScreen ? t('exitFullScreen', { ns: 'common' }) : t('fullScreen', { ns: 'common' })}
+            </Button>
             <Button variant="outline" size="sm">
               <ArrowDown className="h-4 w-4 mr-2" />
               {t('export', { ns: 'common' })}
@@ -295,58 +456,126 @@ const TaskTimeline = () => {
               <ArrowUp className="h-4 w-4 mr-2" />
               {t('import', { ns: 'common' })}
             </Button>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={goToToday}>
               {t('today', { ns: 'tasks' })}
             </Button>
           </div>
         </div>
         
+        <div className="bg-muted p-2 rounded-md text-sm text-muted-foreground">
+          <p><kbd className="px-2 py-1 bg-background rounded border">a</kbd> {t('addNewTask', { ns: 'tasks' })} | 
+          <kbd className="px-2 py-1 bg-background rounded border ml-2">Alt+←</kbd> {t('previousPeriod', { ns: 'tasks' })} | 
+          <kbd className="px-2 py-1 bg-background rounded border ml-2">Alt+→</kbd> {t('nextPeriod', { ns: 'tasks' })}</p>
+        </div>
+        
         {viewMode === 'week' && (
           <div className="grid grid-cols-7 gap-4">
-            {days.map((day, index) => (
-              <div key={index} className="flex flex-col space-y-1">
-                <div className={`text-center p-2 ${format(day, 'yyyy-MM-dd') === '2025-05-20' ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-t-md`}>
-                  <div className="font-medium">{formatWeekDay(day)}</div>
-                  <div className="text-sm">{formatDate(day)}</div>
-                </div>
-                
-                <div className="bg-card border rounded-b-md flex-1 p-2 space-y-2 min-h-[200px]">
-                  {getTasksForDay(day).map(task => (
-                    <Card 
-                      key={task.id} 
-                      className="p-3 text-sm hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => handleEditTask(task)}
-                    >
-                      <div className="font-medium">{task.title}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{task.time} ({task.duration}m)</div>
-                      <Badge className={`mt-2 ${priorityColors[task.project] || ''}`}>
-                        {task.project}
-                      </Badge>
-                      {task.assignees.length > 0 && (
-                        <div className="mt-2 flex -space-x-2">
-                          {task.assignees.map((assignee, idx) => (
-                            <Avatar key={idx} className="h-6 w-6 border-2 border-background">
-                              <AvatarFallback className="text-xs">
-                                {assignee.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          ))}
-                        </div>
-                      )}
-                    </Card>
-                  ))}
+            {days.map((day, index) => {
+              const isCurrentDay = isToday(day);
+              const tasksForDay = getTasksForDay(day);
+              const isWeekend = getDay(day) === 0 || getDay(day) === 6; // Sunday or Saturday
+              
+              return (
+                <div key={index} className={`flex flex-col space-y-1 ${isWeekend ? 'bg-muted/30' : ''}`}>
+                  <div className={`text-center p-2 ${isCurrentDay ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-t-md`}>
+                    <div className="font-medium">{formatWeekDay(day)}</div>
+                    <div className="text-sm">{formatDate(day)}</div>
+                  </div>
                   
-                  {getTasksForDay(day).length === 0 && (
-                    <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                      <div className="text-center">
-                        <Calendar className="h-5 w-5 mx-auto mb-1 opacity-50" />
-                        {t('noTasksScheduled', { ns: 'tasks' })}
+                  <div className="bg-card border rounded-b-md flex-1 p-2 space-y-2 min-h-[300px] relative">
+                    {/* Quick add button on hover */}
+                    <Button 
+                      size="icon"
+                      variant="ghost"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                      onClick={() => {
+                        setEditingTask({
+                          id: '',
+                          title: '',
+                          status: 'todo',
+                          assignees: [],
+                          date: format(day, 'yyyy-MM-dd')
+                        });
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    
+                    {tasksForDay.map(task => (
+                      <TooltipProvider key={task.id}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Card 
+                              key={task.id} 
+                              className={`p-3 text-sm hover:shadow-md transition-shadow cursor-pointer relative border-l-4 ${
+                                task.status === 'completed' || task.status === 'done' ? 'opacity-70' : ''
+                              }`}
+                              style={{ borderLeftColor: task.color || 'var(--primary)' }}
+                              onClick={() => handleEditTask(task)}
+                            >
+                              <div className="font-medium">{task.title}</div>
+                              <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {task.time} ({task.duration}m)
+                              </div>
+                              <Badge className={`mt-2 ${projectColors[task.project || ''] || ''}`}>
+                                {task.project}
+                              </Badge>
+                              
+                              {task.recurrence && (
+                                <Badge variant="outline" className="ml-1 mt-2">
+                                  {task.recurrence}
+                                </Badge>
+                              )}
+                              
+                              {task.assignees.length > 0 && (
+                                <div className="mt-2 flex -space-x-2">
+                                  {task.assignees.map((assignee, idx) => (
+                                    <Avatar key={idx} className="h-6 w-6 border-2 border-background">
+                                      <AvatarFallback className="text-xs">
+                                        {assignee.substring(0, 2).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {hasTaskOverlap(day, task) && (
+                                <div className="absolute top-1 right-1">
+                                  <Badge variant="destructive" className="text-xs px-1.5">!</Badge>
+                                </div>
+                              )}
+                              
+                              {(task.status === 'completed' || task.status === 'done') && (
+                                <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded-sm">
+                                  <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                    {t('completed', { ns: 'tasks' })}
+                                  </Badge>
+                                </div>
+                              )}
+                            </Card>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="font-medium">{task.title}</p>
+                            <p className="text-xs">{task.time} - {task.description || t('noDescription', { ns: 'tasks' })}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                    
+                    {tasksForDay.length === 0 && (
+                      <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                        <div className="text-center">
+                          <Calendar className="h-5 w-5 mx-auto mb-1 opacity-50" />
+                          {t('noTasksScheduled', { ns: 'tasks' })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

@@ -25,6 +25,7 @@ export interface Task {
   date?: string;
   recurrence?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
   comments?: TaskComment[];
+  color?: string; // Added to support custom task colors
 }
 
 export interface TimelineTask extends Task {
