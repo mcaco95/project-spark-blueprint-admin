@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useToast } from "@/components/ui/use-toast";
 import { Task } from '@/types/task';
-import { useTaskContext } from './TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 
 // Sound assets
 const NOTIFICATION_SOUNDS = {
