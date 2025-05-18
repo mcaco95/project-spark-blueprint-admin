@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePomodoroContext } from '@/contexts/PomodoroContext';
@@ -377,7 +376,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
             {pomodoro?.completedPomodoros || 0}/{pomodoro?.estimatedPomodoros || 1} pomodoros
           </span>
         </div>
-        <Badge variant={progress >= 100 ? 'success' : 'outline'} className="text-xs">
+        <Badge variant={progress >= 100 ? "secondary" : "outline"} className="text-xs">
           {Math.round(progress)}%
         </Badge>
       </div>

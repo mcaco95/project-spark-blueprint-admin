@@ -12,6 +12,7 @@ interface TaskContextType {
   moveTask: (taskId: string, sourceColId: string, destColId: string, newIndex?: number) => void;
   getTasksByProject: (projectId: string | null) => Task[];
   getAllTasks: () => Task[];
+  getTaskById: (taskId: string) => Task | undefined;
 }
 
 const defaultBoard: Board = {
@@ -239,6 +240,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     return [...boardTasksList, ...tasks];
   };
 
+  const getTaskById = (taskId: string) => {
+    const allTasks = getAllTasks();
+    return allTasks.find(task => task.id === taskId);
+  };
+
   const getTasksByProject = (projectId: string | null) => {
     const allTasks = getAllTasks();
     if (!projectId) return allTasks;
@@ -356,10 +362,9 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       let destColumnId = '';
 
       // Find source and destination columns
-      Object.keys(prev.columns).forEach((columnId) => {
-        const column = prev.columns[columnId];
-        if (column.taskIds.includes(task.id)) {
-          sourceColumnId = columnId;
+      Object.keys(prev.columns).forEach((colId) => {
+        if (prev.columns[colId].taskIds.includes(task.id)) {
+          sourceColumnId = colId;
         }
         if (
           (column.title.toLowerCase() === 'to do' && task.status === 'todo') ||
@@ -367,7 +372,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
           (column.title.toLowerCase() === 'review' && task.status === 'review') ||
           (column.title.toLowerCase() === 'done' && (task.status === 'done' || task.status === 'completed'))
         ) {
-          destColumnId = columnId;
+          destColumnId = colId;
         }
       });
 
@@ -514,7 +519,8 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       deleteTask, 
       moveTask, 
       getTasksByProject,
-      getAllTasks 
+      getAllTasks,
+      getTaskById 
     }}>
       {children}
     </TaskContext.Provider>
