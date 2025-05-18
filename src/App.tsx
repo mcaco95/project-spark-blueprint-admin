@@ -23,6 +23,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { TaskProvider } from '@/contexts/tasks/TaskContext';
 import { FileProvider } from '@/contexts/files/FileContext';
 import { NotificationProvider } from '@/contexts/notifications/NotificationContext';
+import { PomodoroProvider } from '@/contexts/PomodoroContext';
 import PomodoroTasksPage from '@/pages/PomodoroTasksPage';
 
 import './App.css';
@@ -37,32 +38,34 @@ function App() {
         <TaskProvider>
           <FileProvider>
             <NotificationProvider>
-              <Router>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  
-                  <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-                  <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
-                  <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
-                  <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetail /></ProtectedRoute>} />
-                  <Route path="/kanban" element={<ProtectedRoute><TaskKanban /></ProtectedRoute>} />
-                  <Route path="/timeline" element={<ProtectedRoute><TaskTimeline /></ProtectedRoute>} />
-                  <Route path="/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
-                  <Route path="/messaging" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="/pomodoro" element={<ProtectedRoute><PomodoroTasksPage /></ProtectedRoute>} />
-                  
-                  <Route path="/admin" element={<ProtectedRoute><AdminConsole /></ProtectedRoute>} />
-                  
-                  <Route path="/unauthorized" element={<Unauthorized />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Router>
-              
-              <SonnerToaster position="top-right" />
-              <Toaster />
+              <PomodoroProvider>
+                <Router>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    
+                    <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                    <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+                    <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+                    <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetail /></ProtectedRoute>} />
+                    <Route path="/kanban" element={<ProtectedRoute><TaskKanban /></ProtectedRoute>} />
+                    <Route path="/timeline" element={<ProtectedRoute><TaskTimeline /></ProtectedRoute>} />
+                    <Route path="/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
+                    <Route path="/messaging" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/pomodoro" element={<ProtectedRoute><PomodoroTasksPage /></ProtectedRoute>} />
+                    
+                    <Route path="/admin" element={<ProtectedRoute><AdminConsole /></ProtectedRoute>} />
+                    
+                    <Route path="/unauthorized" element={<Unauthorized />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Router>
+                
+                <SonnerToaster position="top-right" />
+                <Toaster />
+              </PomodoroProvider>
             </NotificationProvider>
           </FileProvider>
         </TaskProvider>
