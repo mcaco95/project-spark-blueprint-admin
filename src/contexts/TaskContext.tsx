@@ -114,8 +114,8 @@ const initialTasks: Task[] = [
     description: 'Review initial app designs and wireframes',
     status: 'completed',
     comments: [
-      { id: '1', author: 'Designer 1', content: 'I've uploaded the latest mockups for review', createdAt: new Date('2025-05-20') },
-      { id: '2', author: 'Project Manager', content: 'Thanks! They look great. Let's discuss the navigation flow tomorrow.', createdAt: new Date('2025-05-20') }
+      { id: '1', author: 'Designer 1', content: "I've uploaded the latest mockups for review", createdAt: new Date('2025-05-20') },
+      { id: '2', author: 'Project Manager', content: "Thanks! They look great. Let's discuss the navigation flow tomorrow.", createdAt: new Date('2025-05-20') }
     ]
   },
   {
@@ -130,11 +130,101 @@ const initialTasks: Task[] = [
     description: 'Plan API endpoints and database schema',
     status: 'in-progress',
     comments: [
-      { id: '1', author: 'Admin User', content: 'Let's use PostgreSQL for this project', createdAt: new Date('2025-05-21') },
-      { id: '2', author: 'Developer 1', content: 'Good choice. I'll start working on the schema', createdAt: new Date('2025-05-21') }
+      { id: '1', author: 'Admin User', content: "Let's use PostgreSQL for this project", createdAt: new Date('2025-05-21') },
+      { id: '2', author: 'Developer 1', content: "Good choice. I'll start working on the schema", createdAt: new Date('2025-05-21') }
     ]
   },
-  // ... keep existing code (other timeline tasks)
+  {
+    id: 'timeline-4',
+    title: 'Frontend development',
+    project: 'Website Redesign',
+    projectId: '1',
+    date: '2025-05-23',
+    time: '09:00',
+    duration: 240,
+    assignees: ['Regular User'],
+    description: 'Implement UI components and integrate with backend',
+    status: 'in-progress',
+    comments: []
+  },
+  {
+    id: 'timeline-5',
+    title: 'API testing',
+    project: 'Mobile App Development',
+    projectId: '2',
+    date: '2025-05-24',
+    time: '13:00',
+    duration: 60,
+    assignees: ['Admin User'],
+    description: 'Test API endpoints for data retrieval and storage',
+    status: 'review',
+    comments: []
+  },
+  {
+    id: 'timeline-6',
+    title: 'Code review',
+    project: 'Website Redesign',
+    projectId: '1',
+    date: '2025-05-25',
+    time: '15:00',
+    duration: 120,
+    assignees: ['Project Manager'],
+    description: 'Review code for best practices and security vulnerabilities',
+    status: 'review',
+    comments: []
+  },
+  {
+    id: 'timeline-7',
+    title: 'Bug fixing',
+    project: 'Mobile App Development',
+    projectId: '2',
+    date: '2025-05-26',
+    time: '10:00',
+    duration: 180,
+    assignees: ['Regular User'],
+    description: 'Fix bugs reported during testing',
+    status: 'in-progress',
+    comments: []
+  },
+  {
+    id: 'timeline-8',
+    title: 'Performance optimization',
+    project: 'Website Redesign',
+    projectId: '1',
+    date: '2025-05-27',
+    time: '14:00',
+    duration: 90,
+    assignees: ['Admin User'],
+    description: 'Optimize website performance for speed and scalability',
+    status: 'review',
+    comments: []
+  },
+  {
+    id: 'timeline-9',
+    title: 'User acceptance testing',
+    project: 'Mobile App Development',
+    projectId: '2',
+    date: '2025-05-28',
+    time: '11:00',
+    duration: 120,
+    assignees: ['Project Manager'],
+    description: 'Conduct user acceptance testing to ensure the app meets user requirements',
+    status: 'done',
+    comments: []
+  },
+  {
+    id: 'timeline-10',
+    title: 'Deployment to production',
+    project: 'Website Redesign',
+    projectId: '1',
+    date: '2025-05-29',
+    time: '16:00',
+    duration: 60,
+    assignees: ['Admin User'],
+    description: 'Deploy the website to the production environment',
+    status: 'completed',
+    comments: []
+  }
 ];
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
