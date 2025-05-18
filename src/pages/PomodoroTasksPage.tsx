@@ -5,6 +5,7 @@ import PomodoroTasks from '@/components/pomodoro/PomodoroTasks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Timer } from 'lucide-react';
+import { TaskProvider } from '@/contexts/tasks/TaskContext';
 
 const PomodoroTasksPage: React.FC = () => {
   return (
@@ -18,8 +19,10 @@ const PomodoroTasksPage: React.FC = () => {
                 Manage your tasks using the Pomodoro technique
               </p>
             </div>
-
-            <PomodoroTasks />
+            
+            <TaskProvider>
+              <PomodoroTasks />
+            </TaskProvider>
           </div>
           
           <div className="md:w-1/3">
