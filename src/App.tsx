@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
+import Tasks from "./pages/Tasks";
 import TaskKanban from "./pages/TaskKanban";
 import TaskTimeline from "./pages/TaskTimeline";
 import TaskDetail from "./pages/TaskDetail";
@@ -61,6 +61,13 @@ const App = () => {
                       <ProjectDetail />
                     </ProtectedRoute>
                   } />
+                  {/* New unified tasks page */}
+                  <Route path="/tasks" element={
+                    <ProtectedRoute>
+                      <Tasks />
+                    </ProtectedRoute>
+                  } />
+                  {/* Keep old routes for backward compatibility */}
                   <Route path="/tasks/kanban" element={
                     <ProtectedRoute>
                       <TaskKanban />

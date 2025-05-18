@@ -29,28 +29,16 @@ export interface Task {
   project?: string;
   assignees: string[];
   
-  // Date and time properties (optional for Kanban tasks)
+  // Date and time properties (optional)
   startDate?: Date | string;
   endDate?: Date | string;
   duration?: number;
   time?: string;
   date?: string;
   
-  // Task view flags
-  showInKanban?: boolean; 
-  showInTimeline?: boolean;
-  
   recurrence?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
   comments?: TaskComment[];
-  color?: string; // Added to support custom task colors
-}
-
-// For backward compatibility with the old structure
-export interface TimelineTask extends Task {
-  date: string;
-  time: string;
-  duration: number;
-  project: string;
+  color?: string; // Support for custom task colors
 }
 
 export interface Column {
@@ -78,4 +66,4 @@ export interface Notification {
   createdAt: Date;
 }
 
-export type ViewMode = 'day' | 'week' | 'month' | 'quarter' | 'year';
+export type ViewMode = 'kanban' | 'list' | 'calendar' | 'timeline';

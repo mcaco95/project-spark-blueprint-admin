@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -30,7 +29,10 @@ import {
   LogOut,
   User,
   MessageSquare,
-  Timer
+  Timer,
+  Kanban,
+  List,
+  Timeline
 } from 'lucide-react';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { cn } from '@/lib/utils';
@@ -95,8 +97,11 @@ export const Navbar = () => {
                   <ul className="grid w-[300px] gap-2 p-2 md:w-[400px] md:grid-cols-2">
                     <li>
                       <NavigationMenuLink asChild>
-                        <Link to="/tasks/kanban" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="text-sm font-medium leading-none">Kanban</div>
+                        <Link to="/tasks?view=kanban" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="flex items-center">
+                            <Kanban className="h-4 w-4 mr-2" />
+                            <div className="text-sm font-medium leading-none">Kanban</div>
+                          </div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Drag and drop task management
                           </p>
@@ -105,8 +110,37 @@ export const Navbar = () => {
                     </li>
                     <li>
                       <NavigationMenuLink asChild>
-                        <Link to="/tasks/timeline" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="text-sm font-medium leading-none">Timeline</div>
+                        <Link to="/tasks?view=list" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="flex items-center">
+                            <List className="h-4 w-4 mr-2" />
+                            <div className="text-sm font-medium leading-none">List</div>
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Table view of all tasks
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/tasks?view=calendar" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            <div className="text-sm font-medium leading-none">Calendar</div>
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Monthly calendar view
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/tasks?view=timeline" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="flex items-center">
+                            <Timeline className="h-4 w-4 mr-2" />
+                            <div className="text-sm font-medium leading-none">Timeline</div>
+                          </div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Weekly timeline view
                           </p>
