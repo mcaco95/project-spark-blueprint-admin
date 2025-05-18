@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,7 @@ const availableUsers = [
 
 export function TaskDialog({ isOpen, onClose, editingTask, defaultProject }: TaskDialogProps) {
   const { addTask, updateTask } = useTaskContext();
+  const navigate = useNavigate();
   
   const [title, setTitle] = React.useState('');
   const [description, setDescription] = React.useState('');
@@ -104,13 +106,20 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject }: Tas
       project: projectName,
     };
     
+    let taskId = '';
+    
     if (editingTask) {
-      updateTask({ id: editingTask.id, ...taskData });
+      taskId = editingTask.id;
+      updateTask({ id: taskId, ...taskData });
     } else {
-      addTask(taskData);
+      taskId = `task-${Math.random().toString(36).substring(2, 9)}`;
+      addTask({ id: taskId, ...taskData });
     }
     
     onClose();
+    
+    // Navigate to task detail page
+    navigate(`/tasks/${taskId}`);
   };
 
   const handleAddAssignee = () => {

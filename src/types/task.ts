@@ -6,6 +6,16 @@ export interface TaskComment {
   author: string;
   createdAt: Date;
   mentions?: string[];
+  attachments?: {
+    name: string;
+    url: string;
+    type: string;
+  }[];
+  reactions?: {
+    emoji: string;
+    count: number;
+    users: string[];
+  }[];
 }
 
 export interface Task {

@@ -14,6 +14,7 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import TaskKanban from "./pages/TaskKanban";
 import TaskTimeline from "./pages/TaskTimeline";
+import TaskDetail from "./pages/TaskDetail";
 import FileManager from "./pages/FileManager";
 import AdminConsole from "./pages/AdminConsole";
 import Settings from "./pages/Settings";
@@ -64,6 +65,11 @@ const App = () => {
                 <Route path="/tasks/timeline" element={
                   <ProtectedRoute>
                     <TaskTimeline />
+                  </ProtectedRoute>
+                } />
+                <Route path="/tasks/:id" element={
+                  <ProtectedRoute>
+                    <TaskDetail />
                   </ProtectedRoute>
                 } />
                 <Route path="/files" element={

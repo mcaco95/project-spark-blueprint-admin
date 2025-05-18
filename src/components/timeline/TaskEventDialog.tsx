@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { Task } from '@/types/task';
 import { useTranslation } from 'react-i18next';
@@ -86,6 +87,7 @@ type TaskFormValues = z.infer<typeof TaskFormSchema>;
 export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDialogProps) {
   const { t } = useTranslation(['common', 'tasks']);
   const { updateTask, addTask } = useTaskContext();
+  const navigate = useNavigate();
 
   const defaultValues: TaskFormValues = {
     title: '',
@@ -149,7 +151,11 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
       addTask(savedTask);
     }
     
+    onSave(savedTask);
     onClose();
+    
+    // Navigate to task detail page
+    navigate(`/tasks/${savedTask.id}`);
   };
 
   return (

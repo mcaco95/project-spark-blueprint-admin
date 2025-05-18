@@ -96,7 +96,10 @@ const initialTasks: Task[] = [
     description: 'Initial meeting to discuss project goals and timeline',
     status: 'completed',
     comments: [
-      { id: '1', author: 'Admin User', content: '@Regular User please prepare the requirements document', createdAt: new Date('2025-05-18') }
+      { id: '1', author: 'Admin User', content: '@Regular User please prepare the requirements document', createdAt: new Date('2025-05-18') },
+      { id: '2', author: 'Regular User', content: 'Will do. When do you need it by?', createdAt: new Date('2025-05-18') },
+      { id: '3', author: 'Admin User', content: 'By tomorrow morning if possible. We need to review it before the meeting.', createdAt: new Date('2025-05-19') },
+      { id: '4', author: 'Project Manager', content: 'Make sure to include the timeline estimates we discussed yesterday', createdAt: new Date('2025-05-19') }
     ]
   },
   {
@@ -110,6 +113,10 @@ const initialTasks: Task[] = [
     assignees: ['Regular User'],
     description: 'Review initial app designs and wireframes',
     status: 'completed',
+    comments: [
+      { id: '1', author: 'Designer 1', content: 'I've uploaded the latest mockups for review', createdAt: new Date('2025-05-20') },
+      { id: '2', author: 'Project Manager', content: 'Thanks! They look great. Let's discuss the navigation flow tomorrow.', createdAt: new Date('2025-05-20') }
+    ]
   },
   {
     id: 'timeline-3',
@@ -122,6 +129,10 @@ const initialTasks: Task[] = [
     assignees: ['Admin User', 'Project Manager'],
     description: 'Plan API endpoints and database schema',
     status: 'in-progress',
+    comments: [
+      { id: '1', author: 'Admin User', content: 'Let's use PostgreSQL for this project', createdAt: new Date('2025-05-21') },
+      { id: '2', author: 'Developer 1', content: 'Good choice. I'll start working on the schema', createdAt: new Date('2025-05-21') }
+    ]
   },
   // ... keep existing code (other timeline tasks)
 ];
