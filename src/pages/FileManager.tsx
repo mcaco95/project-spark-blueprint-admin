@@ -1,5 +1,9 @@
 
 import { MainLayout } from '@/components/layout/MainLayout';
+import { FileExplorer } from '@/components/files/FileExplorer';
+import { FileUploader } from '@/components/files/FileUploader';
+import { Card, CardContent } from '@/components/ui/card';
+import { FileProvider } from '@/contexts/files/FileContext';
 
 const FileManager = () => {
   return (
@@ -12,9 +16,15 @@ const FileManager = () => {
           </p>
         </div>
         
-        <div className="p-8 text-center">
-          <p className="text-muted-foreground">File manager coming soon</p>
-        </div>
+        <FileProvider>
+          <div className="space-y-6">
+            <Card className="border shadow-sm">
+              <CardContent className="p-6">
+                <FileExplorer />
+              </CardContent>
+            </Card>
+          </div>
+        </FileProvider>
       </div>
     </MainLayout>
   );
