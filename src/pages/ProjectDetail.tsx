@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -393,7 +392,14 @@ const ProjectDetail = () => {
       <TaskEventDialog 
         isOpen={isTimelineTaskDialogOpen}
         onClose={() => setIsTimelineTaskDialogOpen(false)}
-        task={editingTask ? { ...editingTask } : { projectId: project.id, project: project.name }}
+        task={editingTask ? { ...editingTask } : { 
+          id: '', 
+          title: '',
+          status: 'todo',
+          assignees: [],
+          projectId: project.id,
+          project: project.name
+        }}
         onSave={(task) => {
           addTask({...task, projectId: project.id});
           setIsTimelineTaskDialogOpen(false);
