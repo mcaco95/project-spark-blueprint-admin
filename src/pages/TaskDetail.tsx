@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -61,6 +60,7 @@ import {
 
 import { TaskDialog } from '@/components/kanban/TaskDialog';
 import { v4 as uuidv4 } from 'uuid';
+import PomodoroButton from '@/components/pomodoro/PomodoroButton';
 
 // Generate random users for demo
 const users = [
@@ -274,6 +274,8 @@ const TaskDetail = () => {
           <h1 className="text-2xl font-bold flex-grow">{task.title}</h1>
           
           <div className="flex gap-2">
+            <PomodoroButton task={task} />
+            
             <Button 
               variant="outline" 
               size="sm"

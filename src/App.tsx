@@ -6,7 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { PomodoroProvider } from "@/contexts/PomodoroContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import PomodoroTimer from "@/components/pomodoro/PomodoroTimer";
 
 // Pages
 import Index from "./pages/Index";
@@ -33,78 +35,83 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TaskProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/unauthorized" element={<Unauthorized />} />
+            <PomodoroProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/unauthorized" element={<Unauthorized />} />
+                  
+                  {/* Protected routes */}
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <Index />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/projects" element={
+                    <ProtectedRoute>
+                      <Projects />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/projects/:id" element={
+                    <ProtectedRoute>
+                      <ProjectDetail />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/tasks/kanban" element={
+                    <ProtectedRoute>
+                      <TaskKanban />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/tasks/timeline" element={
+                    <ProtectedRoute>
+                      <TaskTimeline />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/tasks/:id" element={
+                    <ProtectedRoute>
+                      <TaskDetail />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/messaging" element={
+                    <ProtectedRoute>
+                      <Messaging />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/messaging/:channelId" element={
+                    <ProtectedRoute>
+                      <Messaging />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/files" element={
+                    <ProtectedRoute>
+                      <FileManager />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Admin routes */}
+                  <Route path="/admin" element={
+                    <ProtectedRoute requiredRoles={['admin']}>
+                      <AdminConsole />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Catch all */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
                 
-                {/* Protected routes */}
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                } />
-                <Route path="/projects" element={
-                  <ProtectedRoute>
-                    <Projects />
-                  </ProtectedRoute>
-                } />
-                <Route path="/projects/:id" element={
-                  <ProtectedRoute>
-                    <ProjectDetail />
-                  </ProtectedRoute>
-                } />
-                <Route path="/tasks/kanban" element={
-                  <ProtectedRoute>
-                    <TaskKanban />
-                  </ProtectedRoute>
-                } />
-                <Route path="/tasks/timeline" element={
-                  <ProtectedRoute>
-                    <TaskTimeline />
-                  </ProtectedRoute>
-                } />
-                <Route path="/tasks/:id" element={
-                  <ProtectedRoute>
-                    <TaskDetail />
-                  </ProtectedRoute>
-                } />
-                <Route path="/messaging" element={
-                  <ProtectedRoute>
-                    <Messaging />
-                  </ProtectedRoute>
-                } />
-                <Route path="/messaging/:channelId" element={
-                  <ProtectedRoute>
-                    <Messaging />
-                  </ProtectedRoute>
-                } />
-                <Route path="/files" element={
-                  <ProtectedRoute>
-                    <FileManager />
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } />
-                
-                {/* Admin routes */}
-                <Route path="/admin" element={
-                  <ProtectedRoute requiredRoles={['admin']}>
-                    <AdminConsole />
-                  </ProtectedRoute>
-                } />
-                
-                {/* Catch all */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TooltipProvider>
+                {/* Pomodoro Timer (visible on all pages) */}
+                <PomodoroTimer />
+              </TooltipProvider>
+            </PomodoroProvider>
           </TaskProvider>
         </AuthProvider>
       </QueryClientProvider>
