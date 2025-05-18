@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { TaskProvider } from '@/contexts/TaskContext';
+import { TaskProvider } from '@/contexts/tasks/TaskContext';
 import { ViewMode } from '@/types/task';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { KanbanView } from '@/components/tasks/KanbanView';

@@ -1,131 +1,76 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { TaskProvider } from "@/contexts/TaskContext";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { PomodoroProvider } from "@/contexts/PomodoroContext";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-// Pages
-import Index from "./pages/Index";
-import Projects from "./pages/Projects";
-import ProjectDetail from "./pages/ProjectDetail";
-import Tasks from "./pages/Tasks";
-import TaskKanban from "./pages/TaskKanban";
-import TaskTimeline from "./pages/TaskTimeline";
-import TaskDetail from "./pages/TaskDetail";
-import FileManager from "./pages/FileManager";
-import AdminConsole from "./pages/AdminConsole";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Unauthorized from "./pages/Unauthorized";
-import Messaging from "./pages/Messaging";
-import PomodoroTasksPage from "./pages/PomodoroTasksPage";
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
+import Index from '@/pages/Index';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import Projects from '@/pages/Projects';
+import ProjectDetail from '@/pages/ProjectDetail';
+import Tasks from '@/pages/Tasks';
+import TaskDetail from '@/pages/TaskDetail';
+import TaskKanban from '@/pages/TaskKanban';
+import TaskTimeline from '@/pages/TaskTimeline';
+import FileManager from '@/pages/FileManager';
+import Messaging from '@/pages/Messaging';
+import Settings from '@/pages/Settings';
+import AdminConsole from '@/pages/AdminConsole';
+import NotFound from '@/pages/NotFound';
+import Unauthorized from '@/pages/Unauthorized';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { TaskProvider } from '@/contexts/tasks/TaskContext';
+import { FileProvider } from '@/contexts/files/FileContext';
+import { NotificationProvider } from '@/contexts/notifications/NotificationContext';
+import PomodoroTasksPage from '@/pages/PomodoroTasksPage';
 
+import './App.css';
+
+// Create a client
 const queryClient = new QueryClient();
 
-// Wrap App in a function component to ensure hooks work correctly
-const App = () => {
+function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TaskProvider>
-            <PomodoroProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TaskProvider>
+          <FileProvider>
+            <NotificationProvider>
+              <Router>
                 <Routes>
-                  {/* Public routes */}
+                  <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/projects" element={<Projects />} />
+                    <Route path="/projects/:id" element={<ProjectDetail />} />
+                    <Route path="/tasks" element={<Tasks />} />
+                    <Route path="/tasks/:id" element={<TaskDetail />} />
+                    <Route path="/kanban" element={<TaskKanban />} />
+                    <Route path="/timeline" element={<TaskTimeline />} />
+                    <Route path="/files" element={<FileManager />} />
+                    <Route path="/messaging" element={<Messaging />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/pomodoro" element={<PomodoroTasksPage />} />
+                    
+                    <Route path="/admin" element={<AdminConsole />} />
+                  </Route>
+                  
                   <Route path="/unauthorized" element={<Unauthorized />} />
-                  
-                  {/* Protected routes */}
-                  <Route path="/" element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/projects" element={
-                    <ProtectedRoute>
-                      <Projects />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/projects/:id" element={
-                    <ProtectedRoute>
-                      <ProjectDetail />
-                    </ProtectedRoute>
-                  } />
-                  {/* New unified tasks page */}
-                  <Route path="/tasks" element={
-                    <ProtectedRoute>
-                      <Tasks />
-                    </ProtectedRoute>
-                  } />
-                  {/* Keep old routes for backward compatibility */}
-                  <Route path="/tasks/kanban" element={
-                    <ProtectedRoute>
-                      <TaskKanban />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/tasks/timeline" element={
-                    <ProtectedRoute>
-                      <TaskTimeline />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/tasks/:id" element={
-                    <ProtectedRoute>
-                      <TaskDetail />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/pomodoro" element={
-                    <ProtectedRoute>
-                      <PomodoroTasksPage />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/messaging" element={
-                    <ProtectedRoute>
-                      <Messaging />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/messaging/:channelId" element={
-                    <ProtectedRoute>
-                      <Messaging />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/files" element={
-                    <ProtectedRoute>
-                      <FileManager />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/settings" element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Admin routes */}
-                  <Route path="/admin" element={
-                    <ProtectedRoute requiredRoles={['admin']}>
-                      <AdminConsole />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Catch all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </TooltipProvider>
-            </PomodoroProvider>
-          </TaskProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+              </Router>
+              
+              <SonnerToaster position="top-right" />
+              <Toaster />
+            </NotificationProvider>
+          </FileProvider>
+        </TaskProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
-};
+}
 
 export default App;

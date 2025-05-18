@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, addDays, startOfWeek, addWeeks, subWeeks, isSameDay } from 'date-fns';
-import { useTaskContext } from '@/contexts/TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 import { TaskDialog } from '@/components/kanban/TaskDialog';
 import { Button } from '@/components/ui/button';
 import { Task } from '@/types/task';

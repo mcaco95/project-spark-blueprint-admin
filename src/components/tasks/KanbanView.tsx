@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTaskContext } from '@/contexts/TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 import { TaskColumn } from '@/components/kanban/TaskColumn';
 import { TaskDialog } from '@/components/kanban/TaskDialog';
 import { Button } from '@/components/ui/button';
