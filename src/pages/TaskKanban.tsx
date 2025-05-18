@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { TaskProvider, useTaskContext } from '@/contexts/TaskContext';
 import { TaskColumn } from '@/components/kanban/TaskColumn';
@@ -12,6 +13,7 @@ const KanbanBoard = () => {
   const { board } = useTaskContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const navigate = useNavigate();
 
   const handleAddNewTask = () => {
     setEditingTask(null);
@@ -21,6 +23,12 @@ const KanbanBoard = () => {
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsDialogOpen(true);
+  };
+
+  const handleTaskSaved = (task: Task) => {
+    // Close dialog and navigate to the task detail page
+    setIsDialogOpen(false);
+    navigate(`/tasks/${task.id}`);
   };
 
   const handleCloseDialog = () => {
@@ -62,7 +70,8 @@ const KanbanBoard = () => {
       <TaskDialog 
         isOpen={isDialogOpen} 
         onClose={handleCloseDialog} 
-        editingTask={editingTask} 
+        editingTask={editingTask}
+        onSave={handleTaskSaved} 
       />
     </div>
   );
