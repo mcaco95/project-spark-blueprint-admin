@@ -19,6 +19,7 @@ import { es, enUS } from 'date-fns/locale';
 interface ProjectCardProps {
   project: Project;
   onDelete: () => void;
+  onEdit: () => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -34,7 +35,7 @@ const priorityColors: Record<string, string> = {
   high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
 };
 
-export function ProjectCard({ project, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, onDelete, onEdit }: ProjectCardProps) {
   const { t, i18n } = useTranslation(['common', 'projects']);
   const locale = i18n.language === 'es' ? es : enUS;
 
@@ -134,7 +135,12 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
           )}
         </div>
         <div className="flex space-x-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8"
+            onClick={onEdit}
+          >
             <Edit className="h-4 w-4" />
           </Button>
           <Button 

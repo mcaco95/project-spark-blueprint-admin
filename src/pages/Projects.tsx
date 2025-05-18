@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ProjectCard } from '@/components/projects/ProjectCard';
-import { Project, ProjectStatus } from '@/types/project';
+import { Project, ProjectStatus, ProjectPriority } from '@/types/project';
 import { toast } from 'sonner';
 import {
   Select,
@@ -15,83 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock projects data for demo
-const mockProjects: Project[] = [
-  {
-    id: '1',
-    name: 'Website Redesign',
-    description: 'Complete overhaul of company website with modern design and improved UX',
-    startDate: new Date('2025-01-15'),
-    endDate: new Date('2025-03-30'),
-    status: 'active',
-    priority: 'high',
-    progress: 65,
-    teamMembers: ['User 1', 'User 2', 'User 3'],
-    createdBy: 'Admin User',
-    createdAt: new Date('2025-01-01'),
-  },
-  {
-    id: '2',
-    name: 'Mobile App Development',
-    description: 'Build native mobile apps for iOS and Android platforms',
-    startDate: new Date('2025-02-01'),
-    endDate: new Date('2025-06-30'),
-    status: 'planning',
-    priority: 'high',
-    progress: 20,
-    teamMembers: ['User 2', 'User 4'],
-    createdBy: 'Admin User',
-    createdAt: new Date('2025-01-15'),
-  },
-  {
-    id: '3',
-    name: 'Marketing Campaign',
-    description: 'Q2 digital marketing campaign focusing on social media and content marketing',
-    startDate: new Date('2025-04-01'),
-    endDate: new Date('2025-06-30'),
-    status: 'planning',
-    priority: 'medium',
-    progress: 10,
-    teamMembers: ['User 5'],
-    createdBy: 'Regular User',
-    createdAt: new Date('2025-03-15'),
-  },
-  {
-    id: '4',
-    name: 'Database Migration',
-    description: 'Migrate from MySQL to PostgreSQL and optimize queries',
-    startDate: new Date('2025-02-15'),
-    endDate: new Date('2025-03-15'),
-    status: 'completed',
-    priority: 'medium',
-    progress: 100,
-    teamMembers: ['User 3', 'User 6'],
-    createdBy: 'Admin User',
-    createdAt: new Date('2025-01-30'),
-    updatedAt: new Date('2025-03-15'),
-  },
-  {
-    id: '5',
-    name: 'Product Launch',
-    description: 'Prepare and execute launch of new product line',
-    startDate: new Date('2025-05-01'),
-    endDate: new Date('2025-06-15'),
-    status: 'on-hold',
-    priority: 'high',
-    progress: 45,
-    teamMembers: ['User 1', 'User 5', 'User 7'],
-    createdBy: 'Regular User',
-    createdAt: new Date('2025-02-28'),
-    updatedAt: new Date('2025-04-10'),
-  },
-];
+import { ProjectDialog } from '@/components/projects/ProjectDialog';
+import { useProjectsData } from '@/hooks/useProjectsData';
 
 const Projects = () => {
   const { t } = useTranslation(['common', 'projects']);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
-  const [projects, setProjects] = useState(mockProjects);
+  const { projects, addProject, updateProject, deleteProject } = useProjectsData();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
 
   // Filter projects based on search term and status
   const filteredProjects = projects.filter(project => {
@@ -112,8 +45,23 @@ const Projects = () => {
   };
 
   const handleDeleteProject = (projectId: string) => {
-    setProjects(projects.filter(p => p.id !== projectId));
+    deleteProject(projectId);
     toast.success(t('projectDeleted', { ns: 'projects' }));
+  };
+
+  const handleCreateProject = () => {
+    setEditingProject(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingProject(null);
   };
 
   return (
@@ -126,7 +74,7 @@ const Projects = () => {
               {t('manageProjects', { ns: 'projects' })}
             </p>
           </div>
-          <Button className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto" onClick={handleCreateProject}>
             <Plus className="mr-2 h-4 w-4" />
             {t('createProject', { ns: 'projects' })}
           </Button>
@@ -163,6 +111,7 @@ const Projects = () => {
                 key={project.id} 
                 project={project} 
                 onDelete={() => handleDeleteProject(project.id)}
+                onEdit={() => handleEditProject(project)}
               />
             ))}
           </div>
@@ -171,6 +120,22 @@ const Projects = () => {
             <p className="text-muted-foreground">{t('noProjectsFound', { ns: 'projects' })}</p>
           </div>
         )}
+
+        <ProjectDialog 
+          isOpen={isDialogOpen} 
+          onClose={handleCloseDialog} 
+          editingProject={editingProject} 
+          onSave={(project) => {
+            if (editingProject) {
+              updateProject(project);
+              toast.success(t('projectUpdated', { ns: 'projects' }));
+            } else {
+              addProject(project);
+              toast.success(t('projectCreated', { ns: 'projects' }));
+            }
+            setIsDialogOpen(false);
+          }}
+        />
       </div>
     </MainLayout>
   );
