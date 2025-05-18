@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format, startOfWeek, endOfWeek, addDays, subDays, subWeeks, addWeeks, parseISO } from 'date-fns';
@@ -31,116 +30,8 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TaskEventDialog } from '@/components/timeline/TaskEventDialog';
-import { TimelineTask, ViewMode } from '@/types/task';
-
-// Enhanced mock data for the timeline
-const mockTimelineTasks: TimelineTask[] = [
-  {
-    id: '1',
-    title: 'Project kickoff meeting',
-    project: 'Website Redesign',
-    projectId: '1',
-    date: '2025-05-20',
-    time: '10:00',
-    duration: 60,
-    assignees: ['Admin User', 'Regular User'],
-    description: 'Initial meeting to discuss project goals and timeline',
-    comments: [
-      { id: '1', author: 'Admin User', content: '@Regular User please prepare the requirements document', createdAt: new Date('2025-05-18') }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Design review',
-    project: 'Mobile App Development',
-    projectId: '2',
-    date: '2025-05-21',
-    time: '14:00',
-    duration: 90,
-    assignees: ['Regular User'],
-    description: 'Review initial app designs and wireframes'
-  },
-  {
-    id: '3',
-    title: 'Backend planning',
-    project: 'Website Redesign',
-    projectId: '1',
-    date: '2025-05-22',
-    time: '11:00',
-    duration: 120,
-    assignees: ['Admin User', 'Project Manager'],
-    description: 'Plan API endpoints and database schema'
-  },
-  {
-    id: '4',
-    title: 'Client status update',
-    project: 'Marketing Campaign',
-    projectId: '3',
-    date: '2025-05-23',
-    time: '15:30',
-    duration: 30,
-    assignees: ['Project Manager'],
-    description: 'Weekly status report to the client'
-  },
-  {
-    id: '5',
-    title: 'Team weekly sync',
-    project: 'All Projects',
-    projectId: null,
-    date: '2025-05-24',
-    time: '09:00',
-    duration: 45,
-    assignees: ['Admin User', 'Regular User', 'Project Manager'],
-    description: 'Weekly team synchronization meeting',
-    recurrence: 'weekly'
-  },
-  {
-    id: '6',
-    title: 'Code review',
-    project: 'Mobile App Development',
-    projectId: '2',
-    date: '2025-05-25',
-    time: '13:00',
-    duration: 60,
-    assignees: ['Regular User', 'Developer 1'],
-    description: 'Review pull requests and discuss improvements'
-  },
-  {
-    id: '7',
-    title: 'UI/UX Workshop',
-    project: 'Website Redesign',
-    projectId: '1',
-    date: '2025-05-26',
-    time: '10:00',
-    duration: 180,
-    assignees: ['Designer 1', 'Designer 2', 'Regular User'],
-    description: 'Workshop to define UI components and user flows'
-  },
-  {
-    id: '8',
-    title: 'Monthly Planning',
-    project: 'All Projects',
-    projectId: null,
-    date: '2025-06-01',
-    time: '09:00',
-    duration: 120,
-    assignees: ['Admin User', 'Project Manager', 'Regular User'],
-    description: 'Monthly planning session for all projects',
-    recurrence: 'monthly'
-  },
-  {
-    id: '9',
-    title: 'Quarterly Review',
-    project: 'All Projects',
-    projectId: null,
-    date: '2025-07-01',
-    time: '14:00',
-    duration: 180,
-    assignees: ['Admin User', 'Project Manager', 'Regular User', 'Developer 1', 'Designer 1'],
-    description: 'Quarterly review and planning for Q3',
-    recurrence: 'quarterly'
-  },
-];
+import { Task, ViewMode } from '@/types/task';
+import { useTaskContext } from '@/contexts/TaskContext';
 
 const priorityColors: Record<string, string> = {
   'Website Redesign': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
@@ -152,6 +43,7 @@ const priorityColors: Record<string, string> = {
 const TaskTimeline = () => {
   const { t, i18n } = useTranslation(['common', 'tasks']);
   const locale = i18n.language === 'es' ? es : enUS;
+  const { tasks, updateTask, addTask } = useTaskContext();
   
   // Use a specific date for the demo so it matches our mock data
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(parseISO('2025-05-20')));
@@ -159,7 +51,7 @@ const TaskTimeline = () => {
   const [filterProject, setFilterProject] = useState<string | null>(null);
   const [filterUser, setFilterUser] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<TimelineTask | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   
   // Generate days based on view mode
   const getDaysForView = () => {
@@ -248,7 +140,7 @@ const TaskTimeline = () => {
   };
 
   // Filter tasks based on selected filters
-  const filteredTasks = mockTimelineTasks.filter(task => {
+  const filteredTasks = tasks.filter(task => {
     let matchesProject = true;
     let matchesUser = true;
     
@@ -257,7 +149,7 @@ const TaskTimeline = () => {
     }
     
     if (filterUser) {
-      matchesUser = task.assignees.includes(filterUser);
+      matchesUser = task.assignees && task.assignees.includes(filterUser);
     }
     
     return matchesProject && matchesUser;
@@ -274,14 +166,17 @@ const TaskTimeline = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEditTask = (task: TimelineTask) => {
+  const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsDialogOpen(true);
   };
 
-  const handleSaveTask = (task: TimelineTask) => {
-    // In a real application, this would update the task in the database
-    console.log('Save task:', task);
+  const handleSaveTask = (task: Task) => {
+    if (task.id && tasks.some(t => t.id === task.id)) {
+      updateTask(task);
+    } else {
+      addTask(task);
+    }
     setIsDialogOpen(false);
   };
 

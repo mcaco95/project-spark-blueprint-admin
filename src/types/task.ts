@@ -1,34 +1,37 @@
 
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  status: 'todo' | 'in-progress' | 'review' | 'done';
-  priority?: 'low' | 'medium' | 'high';
-  dueDate?: Date;
-  assignee?: string;
-}
-
-export interface TimelineTask {
-  id: string;
-  title: string;
-  project: string;
-  projectId: string | null;
-  date: string;
-  time: string;
-  duration: number;
-  assignees: string[];
-  description?: string;
-  recurrence?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-  comments?: TaskComment[];
-}
-
 export interface TaskComment {
   id: string;
   content?: string;
   text?: string;
   author: string;
   createdAt: Date;
+  mentions?: string[];
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'todo' | 'in-progress' | 'review' | 'done' | 'completed';
+  priority?: 'low' | 'medium' | 'high';
+  dueDate?: Date;
+  projectId?: string | null;
+  project?: string;
+  assignees: string[];
+  startDate?: Date | string;
+  endDate?: Date | string;
+  duration?: number;
+  time?: string;
+  date?: string;
+  recurrence?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  comments?: TaskComment[];
+}
+
+export interface TimelineTask extends Task {
+  date: string;
+  time: string;
+  duration: number;
+  project: string;
 }
 
 export interface Column {

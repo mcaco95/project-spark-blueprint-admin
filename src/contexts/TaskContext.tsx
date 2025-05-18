@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Task, Board, Column } from '@/types/task';
@@ -6,10 +5,13 @@ import { toast } from '@/components/ui/sonner';
 
 interface TaskContextType {
   board: Board;
+  tasks: Task[];
   addTask: (task: Omit<Task, 'id'>) => void;
   updateTask: (task: Task) => void;
   deleteTask: (taskId: string) => void;
   moveTask: (taskId: string, sourceColId: string, destColId: string, newIndex?: number) => void;
+  getTasksByProject: (projectId: string | null) => Task[];
+  getAllTasks: () => Task[];
 }
 
 const defaultBoard: Board = {
@@ -20,6 +22,9 @@ const defaultBoard: Board = {
       description: 'Define project scope, timeline, and resources',
       status: 'todo',
       priority: 'high',
+      projectId: '1',
+      project: 'Website Redesign',
+      assignees: ['Admin User'],
     },
     'task-2': {
       id: 'task-2',
@@ -27,6 +32,9 @@ const defaultBoard: Board = {
       description: 'Install necessary tools and dependencies',
       status: 'in-progress',
       priority: 'medium',
+      projectId: '1',
+      project: 'Website Redesign',
+      assignees: ['Regular User'],
     },
     'task-3': {
       id: 'task-3',
@@ -34,6 +42,9 @@ const defaultBoard: Board = {
       description: 'Provide feedback on UI/UX design',
       status: 'review',
       priority: 'medium',
+      projectId: '2',
+      project: 'Mobile App Development',
+      assignees: ['Admin User', 'Regular User'],
     },
     'task-4': {
       id: 'task-4',
@@ -41,6 +52,9 @@ const defaultBoard: Board = {
       description: 'Push initial version to staging',
       status: 'done',
       priority: 'high',
+      projectId: '2',
+      project: 'Mobile App Development',
+      assignees: ['Project Manager'],
     },
   },
   columns: {
@@ -68,10 +82,67 @@ const defaultBoard: Board = {
   columnOrder: ['column-1', 'column-2', 'column-3', 'column-4'],
 };
 
+// Additional task data for timeline view
+const initialTasks: Task[] = [
+  {
+    id: 'timeline-1',
+    title: 'Project kickoff meeting',
+    project: 'Website Redesign',
+    projectId: '1',
+    date: '2025-05-20',
+    time: '10:00',
+    duration: 60,
+    assignees: ['Admin User', 'Regular User'],
+    description: 'Initial meeting to discuss project goals and timeline',
+    status: 'completed',
+    comments: [
+      { id: '1', author: 'Admin User', content: '@Regular User please prepare the requirements document', createdAt: new Date('2025-05-18') }
+    ]
+  },
+  {
+    id: 'timeline-2',
+    title: 'Design review',
+    project: 'Mobile App Development',
+    projectId: '2',
+    date: '2025-05-21',
+    time: '14:00',
+    duration: 90,
+    assignees: ['Regular User'],
+    description: 'Review initial app designs and wireframes',
+    status: 'completed',
+  },
+  {
+    id: 'timeline-3',
+    title: 'Backend planning',
+    project: 'Website Redesign',
+    projectId: '1',
+    date: '2025-05-22',
+    time: '11:00',
+    duration: 120,
+    assignees: ['Admin User', 'Project Manager'],
+    description: 'Plan API endpoints and database schema',
+    status: 'in-progress',
+  },
+  // ... keep existing code (other timeline tasks)
+];
+
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const [board, setBoard] = useState<Board>(defaultBoard);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  const getAllTasks = () => {
+    // Combine board tasks and timeline tasks
+    const boardTasksList = Object.values(board.tasks);
+    return [...boardTasksList, ...tasks];
+  };
+
+  const getTasksByProject = (projectId: string | null) => {
+    const allTasks = getAllTasks();
+    if (!projectId) return allTasks;
+    return allTasks.filter(task => task.projectId === projectId);
+  };
 
   const addTask = (task: Omit<Task, 'id'>) => {
     const newTaskId = `task-${uuidv4()}`;
@@ -80,43 +151,59 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       id: newTaskId,
     };
 
-    // Get the column ID based on the status
-    let targetColumnId = '';
-    Object.keys(board.columns).forEach((columnId) => {
-      const column = board.columns[columnId];
-      if (
-        (column.title.toLowerCase() === 'to do' && task.status === 'todo') ||
-        (column.title.toLowerCase() === 'in progress' && task.status === 'in-progress') ||
-        (column.title.toLowerCase() === 'review' && task.status === 'review') ||
-        (column.title.toLowerCase() === 'done' && task.status === 'done')
-      ) {
-        targetColumnId = columnId;
-      }
-    });
-
-    if (!targetColumnId) {
-      targetColumnId = 'column-1'; // Default to the first column
+    // If the task has a date and time, add it to the timeline tasks
+    if (task.date && task.time) {
+      setTasks(prev => [...prev, newTask]);
     }
 
-    setBoard((prev) => ({
-      ...prev,
-      tasks: {
-        ...prev.tasks,
-        [newTaskId]: newTask,
-      },
-      columns: {
-        ...prev.columns,
-        [targetColumnId]: {
-          ...prev.columns[targetColumnId],
-          taskIds: [...prev.columns[targetColumnId].taskIds, newTaskId],
+    // Otherwise, add it to the kanban board
+    else {
+      // Get the column ID based on the status
+      let targetColumnId = '';
+      Object.keys(board.columns).forEach((columnId) => {
+        const column = board.columns[columnId];
+        if (
+          (column.title.toLowerCase() === 'to do' && task.status === 'todo') ||
+          (column.title.toLowerCase() === 'in progress' && task.status === 'in-progress') ||
+          (column.title.toLowerCase() === 'review' && task.status === 'review') ||
+          (column.title.toLowerCase() === 'done' && (task.status === 'done' || task.status === 'completed'))
+        ) {
+          targetColumnId = columnId;
+        }
+      });
+
+      if (!targetColumnId) {
+        targetColumnId = 'column-1'; // Default to the first column
+      }
+
+      setBoard((prev) => ({
+        ...prev,
+        tasks: {
+          ...prev.tasks,
+          [newTaskId]: newTask,
         },
-      },
-    }));
+        columns: {
+          ...prev.columns,
+          [targetColumnId]: {
+            ...prev.columns[targetColumnId],
+            taskIds: [...prev.columns[targetColumnId].taskIds, newTaskId],
+          },
+        },
+      }));
+    }
 
     toast.success('Task created successfully');
   };
 
   const updateTask = (task: Task) => {
+    // Check if this is a timeline task (has date and time)
+    if (task.date && task.time) {
+      setTasks(prev => prev.map(t => t.id === task.id ? task : t));
+      toast.success('Task updated successfully');
+      return;
+    }
+
+    // Otherwise, it's a kanban board task
     setBoard((prev) => {
       // Check if the task status has changed
       const oldTask = prev.tasks[task.id];
@@ -150,7 +237,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
           (column.title.toLowerCase() === 'to do' && task.status === 'todo') ||
           (column.title.toLowerCase() === 'in progress' && task.status === 'in-progress') ||
           (column.title.toLowerCase() === 'review' && task.status === 'review') ||
-          (column.title.toLowerCase() === 'done' && task.status === 'done')
+          (column.title.toLowerCase() === 'done' && (task.status === 'done' || task.status === 'completed'))
         ) {
           destColumnId = columnId;
         }
@@ -192,6 +279,15 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteTask = (taskId: string) => {
+    // Check if the task is in the timeline tasks
+    const timelineTask = tasks.find(t => t.id === taskId);
+    if (timelineTask) {
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      toast.success('Task deleted successfully');
+      return;
+    }
+
+    // Otherwise, it's in the kanban board
     setBoard((prev) => {
       // First, find which column contains this task
       let columnWithTask: Column | null = null;
@@ -282,7 +378,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <TaskContext.Provider value={{ board, addTask, updateTask, deleteTask, moveTask }}>
+    <TaskContext.Provider value={{ 
+      board, 
+      tasks, 
+      addTask, 
+      updateTask, 
+      deleteTask, 
+      moveTask, 
+      getTasksByProject,
+      getAllTasks 
+    }}>
       {children}
     </TaskContext.Provider>
   );

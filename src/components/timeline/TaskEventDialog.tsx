@@ -1,12 +1,12 @@
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { TimelineTask } from '@/types/task';
+import { Task } from '@/types/task';
 import { useTranslation } from 'react-i18next';
+import { useTaskContext } from '@/contexts/TaskContext';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -45,8 +45,8 @@ import { cn } from '@/lib/utils';
 interface TaskEventDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (task: TimelineTask) => void;
-  task: TimelineTask | null;
+  onSave: (task: Task) => void;
+  task: Task | null;
 }
 
 // Mock projects for the dialog
@@ -85,6 +85,7 @@ type TaskFormValues = z.infer<typeof TaskFormSchema>;
 
 export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDialogProps) {
   const { t } = useTranslation(['common', 'tasks']);
+  const { updateTask, addTask } = useTaskContext();
 
   const defaultValues: TaskFormValues = {
     title: '',
@@ -104,18 +105,18 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
 
   useEffect(() => {
     if (task) {
-      const [hours, minutes] = task.time.split(':').map(Number);
-      const taskDate = new Date(task.date);
+      const [hours, minutes] = (task.time || '09:00').split(':').map(Number);
+      const taskDate = task.date ? new Date(task.date) : new Date();
       taskDate.setHours(hours);
       taskDate.setMinutes(minutes);
 
       form.reset({
         title: task.title,
         date: taskDate,
-        time: task.time,
-        duration: task.duration,
-        project: task.projectId || task.project,
-        assignees: task.assignees,
+        time: task.time || '09:00',
+        duration: task.duration || 30,
+        project: task.projectId || (task.project ? task.project : availableProjects[0].id || ''),
+        assignees: task.assignees || [],
         description: task.description || '',
         recurrence: task.recurrence as RecurrenceType || null,
       });
@@ -127,7 +128,7 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
   const onSubmit = (data: TaskFormValues) => {
     const projectInfo = availableProjects.find(p => p.id === data.project || p.name === data.project);
     
-    const savedTask: TimelineTask = {
+    const savedTask: Task = {
       id: task?.id || Math.random().toString(36).substring(2, 9),
       title: data.title,
       date: format(data.date, 'yyyy-MM-dd'),
@@ -138,10 +139,17 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
       assignees: data.assignees,
       description: data.description,
       recurrence: data.recurrence || undefined,
+      status: task?.status || 'todo',
       comments: task?.comments || [],
     };
 
-    onSave(savedTask);
+    if (task) {
+      updateTask(savedTask);
+    } else {
+      addTask(savedTask);
+    }
+    
+    onClose();
   };
 
   return (

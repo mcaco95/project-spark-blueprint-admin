@@ -4,7 +4,9 @@ import { Task } from '@/types/task';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useTaskContext } from '@/contexts/TaskContext';
+import { Badge } from '@/components/ui/badge';
 
 interface TaskCardProps {
   task: Task;
@@ -32,19 +34,29 @@ export function TaskCard({ task, isDragging, onEdit }: TaskCardProps) {
       <CardContent className="px-4 py-2 text-sm text-muted-foreground">
         <p className="line-clamp-2">{task.description || 'No description'}</p>
         
-        {task.priority && (
-          <div className="mt-2">
+        <div className="flex flex-wrap gap-1 mt-2">
+          {task.priority && (
             <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${priorityColors[task.priority]}`}>
               {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
             </span>
-          </div>
-        )}
+          )}
+          
+          {task.project && (
+            <Badge variant="secondary" className="text-xs">
+              {task.project}
+            </Badge>
+          )}
+        </div>
       </CardContent>
       <CardFooter className="px-4 py-2 flex justify-between">
-        <div className="text-xs text-muted-foreground">
-          {task.assignee && (
-            <span>{task.assignee}</span>
-          )}
+        <div className="flex -space-x-1">
+          {task.assignees && task.assignees.map((assignee, idx) => (
+            <Avatar key={idx} className="h-6 w-6 border-2 border-background">
+              <AvatarFallback className="text-xs">
+                {assignee.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          ))}
         </div>
         <div className="flex space-x-1">
           <Button variant="ghost" size="icon" onClick={onEdit} className="h-7 w-7">
