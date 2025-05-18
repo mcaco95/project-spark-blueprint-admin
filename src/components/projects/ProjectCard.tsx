@@ -139,7 +139,11 @@ export function ProjectCard({ project, onDelete, onEdit }: ProjectCardProps) {
             variant="ghost" 
             size="icon" 
             className="h-8 w-8"
-            onClick={onEdit}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEdit();
+            }}
           >
             <Edit className="h-4 w-4" />
           </Button>
@@ -147,7 +151,11 @@ export function ProjectCard({ project, onDelete, onEdit }: ProjectCardProps) {
             variant="ghost" 
             size="icon" 
             className="h-8 w-8 text-destructive hover:text-destructive"
-            onClick={onDelete}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDelete();
+            }}
           >
             <Trash2 className="h-4 w-4" />
           </Button>

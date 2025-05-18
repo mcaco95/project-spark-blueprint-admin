@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 // Pages
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import TaskKanban from "./pages/TaskKanban";
 import TaskTimeline from "./pages/TaskTimeline";
 import FileManager from "./pages/FileManager";
@@ -48,6 +49,11 @@ const App = () => {
                 <Route path="/projects" element={
                   <ProtectedRoute>
                     <Projects />
+                  </ProtectedRoute>
+                } />
+                <Route path="/projects/:id" element={
+                  <ProtectedRoute>
+                    <ProjectDetail />
                   </ProtectedRoute>
                 } />
                 <Route path="/tasks/kanban" element={

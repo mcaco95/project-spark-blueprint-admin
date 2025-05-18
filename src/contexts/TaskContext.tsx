@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Task, Board, Column } from '@/types/task';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 interface TaskContextType {
   board: Board;
   tasks: Task[];
-  addTask: (task: Omit<Task, 'id'>) => void;
+  addTask: (task: Omit<Task, 'id'> & { id?: string }) => void;
   updateTask: (task: Task) => void;
   deleteTask: (taskId: string) => void;
   moveTask: (taskId: string, sourceColId: string, destColId: string, newIndex?: number) => void;
@@ -144,18 +144,30 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     return allTasks.filter(task => task.projectId === projectId);
   };
 
-  const addTask = (task: Omit<Task, 'id'>) => {
-    const newTaskId = `task-${uuidv4()}`;
+  const addTask = (task: Omit<Task, 'id'> & { id?: string }) => {
+    const newTaskId = task.id || `task-${uuidv4()}`;
     const newTask: Task = {
       ...task,
       id: newTaskId,
+      // Make sure tasks always have a projectId
+      projectId: task.projectId || null,
     };
 
     // If the task has a date and time, add it to the timeline tasks
     if (task.date && task.time) {
-      setTasks(prev => [...prev, newTask]);
+      setTasks(prev => {
+        // Check if the task already exists
+        const existingTaskIndex = prev.findIndex(t => t.id === newTaskId);
+        if (existingTaskIndex >= 0) {
+          // Replace the existing task
+          const updatedTasks = [...prev];
+          updatedTasks[existingTaskIndex] = newTask;
+          return updatedTasks;
+        }
+        // Add new task
+        return [...prev, newTask];
+      });
     }
-
     // Otherwise, add it to the kanban board
     else {
       // Get the column ID based on the status
@@ -176,23 +188,38 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         targetColumnId = 'column-1'; // Default to the first column
       }
 
-      setBoard((prev) => ({
-        ...prev,
-        tasks: {
+      setBoard((prev) => {
+        // Check if the task already exists
+        const taskExists = prev.tasks[newTaskId];
+        const updatedTasks = {
           ...prev.tasks,
           [newTaskId]: newTask,
-        },
-        columns: {
-          ...prev.columns,
-          [targetColumnId]: {
-            ...prev.columns[targetColumnId],
-            taskIds: [...prev.columns[targetColumnId].taskIds, newTaskId],
-          },
-        },
-      }));
+        };
+
+        // If the task doesn't exist yet, we need to add it to a column
+        if (!taskExists) {
+          return {
+            ...prev,
+            tasks: updatedTasks,
+            columns: {
+              ...prev.columns,
+              [targetColumnId]: {
+                ...prev.columns[targetColumnId],
+                taskIds: [...prev.columns[targetColumnId].taskIds, newTaskId],
+              },
+            },
+          };
+        }
+
+        // If the task exists, just update it
+        return {
+          ...prev,
+          tasks: updatedTasks,
+        };
+      });
     }
 
-    toast.success('Task created successfully');
+    toast.success('Task saved successfully');
   };
 
   const updateTask = (task: Task) => {
