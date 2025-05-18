@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { Task } from '@/types/task';
 import { useTranslation } from 'react-i18next';
-import { useTaskContext } from '@/contexts/TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';

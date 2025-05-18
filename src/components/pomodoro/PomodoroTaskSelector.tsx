@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePomodoroContext } from '@/contexts/PomodoroContext';
-import { useTaskContext } from '@/contexts/TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 import {
   Dialog,
   DialogContent,
