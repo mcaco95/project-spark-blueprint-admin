@@ -2,7 +2,7 @@
 import React from 'react';
 import { TaskCard } from './TaskCard';
 import { Task, Column } from '@/types/task';
-import { useTaskContext } from '@/contexts/TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 
 interface TaskColumnProps {
   column: Column;
