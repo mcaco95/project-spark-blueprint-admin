@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import {
   Dialog,
@@ -29,6 +28,7 @@ interface TaskDialogProps {
   isOpen: boolean;
   onClose: () => void;
   editingTask: Task | null;
+  defaultProject?: string;
 }
 
 // Mock projects for the dialog
@@ -48,7 +48,7 @@ const availableUsers = [
   { name: 'Designer 2' },
 ];
 
-export function TaskDialog({ isOpen, onClose, editingTask }: TaskDialogProps) {
+export function TaskDialog({ isOpen, onClose, editingTask, defaultProject }: TaskDialogProps) {
   const { addTask, updateTask } = useTaskContext();
   
   const [title, setTitle] = React.useState('');
@@ -77,11 +77,19 @@ export function TaskDialog({ isOpen, onClose, editingTask }: TaskDialogProps) {
         setStatus('todo');
         setPriority('medium');
         setAssignees([]);
-        setProjectId('1');
-        setProjectName('Website Redesign');
+        
+        // Use defaultProject if provided
+        if (defaultProject) {
+          setProjectId(defaultProject);
+          const project = availableProjects.find(p => p.id === defaultProject);
+          setProjectName(project ? project.name : '');
+        } else {
+          setProjectId('1');
+          setProjectName('Website Redesign');
+        }
       }
     }
-  }, [isOpen, editingTask]);
+  }, [isOpen, editingTask, defaultProject]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

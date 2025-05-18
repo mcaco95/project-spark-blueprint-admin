@@ -12,7 +12,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Calendar, Clock, ArrowLeft, Plus, MessageSquare, Edit, Trash2 } from 'lucide-react';
-import { ProjectComment, Task } from '@/types/project';
+import { ProjectComment } from '@/types/project';
+import { Task } from '@/types/task'; // Import Task from task.ts instead of project.ts
 import { toast } from 'sonner';
 import { ProjectDialog } from '@/components/projects/ProjectDialog';
 import { TaskDialog } from '@/components/kanban/TaskDialog';
