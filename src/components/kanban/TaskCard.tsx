@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Task } from '@/types/task';
@@ -5,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2, Timer, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useTaskContext } from '@/contexts/TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 import { usePomodoroContext } from '@/contexts/PomodoroContext';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
