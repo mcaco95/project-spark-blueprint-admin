@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -17,14 +16,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ChevronLeft,
   ChevronRight,
-  Calendar,
+  Calendar as CalendarIcon,
   Plus,
   Filter,
   ArrowDown,
   ArrowUp,
   ListFilter,
   Clock,
-  Calendar as CalendarIcon
 } from 'lucide-react';
 import {
   Select,
@@ -399,10 +397,10 @@ const TaskTimeline = () => {
   };
   
   // Jump to a specific date from calendar picker
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setCurrentDate(date);
-      setDate(date);
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate) {
+      setCurrentDate(selectedDate);
+      setDate(selectedDate);
     }
   };
 
@@ -1163,6 +1161,7 @@ const TaskTimeline = () => {
                 selected={date}
                 onSelect={handleDateSelect}
                 initialFocus
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
