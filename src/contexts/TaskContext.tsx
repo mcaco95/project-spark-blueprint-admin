@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Task, Board, Column } from '@/types/task';
@@ -363,14 +364,17 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
       // Find source and destination columns
       Object.keys(prev.columns).forEach((colId) => {
-        if (prev.columns[colId].taskIds.includes(task.id)) {
+        const currentColumn = prev.columns[colId];
+        
+        if (currentColumn.taskIds.includes(task.id)) {
           sourceColumnId = colId;
         }
+        
         if (
-          (column.title.toLowerCase() === 'to do' && task.status === 'todo') ||
-          (column.title.toLowerCase() === 'in progress' && task.status === 'in-progress') ||
-          (column.title.toLowerCase() === 'review' && task.status === 'review') ||
-          (column.title.toLowerCase() === 'done' && (task.status === 'done' || task.status === 'completed'))
+          (currentColumn.title.toLowerCase() === 'to do' && task.status === 'todo') ||
+          (currentColumn.title.toLowerCase() === 'in progress' && task.status === 'in-progress') ||
+          (currentColumn.title.toLowerCase() === 'review' && task.status === 'review') ||
+          (currentColumn.title.toLowerCase() === 'done' && (task.status === 'done' || task.status === 'completed'))
         ) {
           destColumnId = colId;
         }
