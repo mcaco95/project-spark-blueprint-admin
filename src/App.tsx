@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Unauthorized from "./pages/Unauthorized";
+import Messaging from "./pages/Messaging"; // New import
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,16 @@ const App = () => {
                 <Route path="/tasks/:id" element={
                   <ProtectedRoute>
                     <TaskDetail />
+                  </ProtectedRoute>
+                } />
+                <Route path="/messaging" element={
+                  <ProtectedRoute>
+                    <Messaging />
+                  </ProtectedRoute>
+                } />
+                <Route path="/messaging/:channelId" element={
+                  <ProtectedRoute>
+                    <Messaging />
                   </ProtectedRoute>
                 } />
                 <Route path="/files" element={

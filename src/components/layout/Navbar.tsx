@@ -28,7 +28,8 @@ import {
   Settings, 
   Users,
   LogOut,
-  User
+  User,
+  MessageSquare
 } from 'lucide-react';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { cn } from '@/lib/utils';
@@ -112,6 +113,15 @@ export const Navbar = () => {
                     </li>
                   </ul>
                 </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                  <Link to="/messaging" className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Messaging</span>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
 
               <NavigationMenuItem>

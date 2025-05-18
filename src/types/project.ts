@@ -25,6 +25,16 @@ export interface ProjectComment {
   author: string;
   createdAt: Date;
   mentions?: string[];
+  attachments?: {
+    name: string;
+    url: string;
+    type: string;
+  }[];
+  reactions?: {
+    emoji: string;
+    count: number;
+    users: string[];
+  }[];
 }
 
 export interface ProjectTemplate {
@@ -51,6 +61,43 @@ export interface TeamMember {
   department?: string;
   position?: string;
   skills?: string[];
+}
+
+export interface MessageChannel {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'project' | 'task' | 'general' | 'direct';
+  members: string[];
+  createdBy: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  relatedProjectId?: string;
+  relatedTaskId?: string;
+  isPrivate: boolean;
+  messages?: Message[];
+}
+
+export interface Message {
+  id: string;
+  text: string;
+  author: string;
+  channelId: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  mentions?: string[];
+  attachments?: {
+    name: string;
+    url: string;
+    type: string;
+  }[];
+  reactions?: {
+    emoji: string;
+    count: number;
+    users: string[];
+  }[];
+  isPinned?: boolean;
+  parentMessageId?: string; // For threaded replies
 }
 
 // Import Task from task.ts to ensure proper linking

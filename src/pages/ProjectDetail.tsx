@@ -1,5 +1,6 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useProjectsData } from '@/hooks/useProjectsData';
@@ -10,13 +11,30 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, Clock, ArrowLeft, Plus, MessageSquare, Edit, Trash2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Calendar, 
+  Clock, 
+  ArrowLeft, 
+  Plus, 
+  MessageSquare, 
+  Edit, 
+  Trash2, 
+  PaperclipIcon, 
+  SendIcon, 
+  AtSign, 
+  Smile,
+  ThumbsUp,
+  ThumbsDown,
+  Reply
+} from 'lucide-react';
 import { ProjectComment } from '@/types/project';
 import { Task } from '@/types/task'; // Import Task from task.ts instead of project.ts
 import { toast } from 'sonner';
 import { ProjectDialog } from '@/components/projects/ProjectDialog';
 import { TaskDialog } from '@/components/kanban/TaskDialog';
 import { TaskEventDialog } from '@/components/timeline/TaskEventDialog';
+import { v4 as uuidv4 } from 'uuid';
 
 const statusColors: Record<string, string> = {
   planning: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
@@ -39,6 +57,8 @@ const taskStatusColors: Record<string, string> = {
   'completed': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
 };
 
+const reactionEmojis = ['👍', '👎', '❤️', '🎉', '👀', '🚀', '👏'];
+
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -49,6 +69,10 @@ const ProjectDetail = () => {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [isTimelineTaskDialogOpen, setIsTimelineTaskDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [newComment, setNewComment] = useState('');
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const commentSectionRef = useRef<HTMLDivElement>(null);
   
   const project = getProjectById(id || '');
   
@@ -96,12 +120,93 @@ const ProjectDetail = () => {
   const handleTaskClick = (task: Task) => {
     setEditingTask(task);
     
-    // Determine which dialog to open based on whether the task has date/time fields
-    if (task.date && task.time) {
-      setIsTimelineTaskDialogOpen(true);
-    } else {
-      setIsTaskDialogOpen(true);
+    // Navigate to task detail page
+    navigate(`/tasks/${task.id}`);
+  };
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) return;
+    
+    const newCommentObj: ProjectComment = {
+      id: uuidv4(),
+      text: newComment,
+      author: 'Current User', // In a real app, this would be the logged-in user
+      createdAt: new Date(),
+      mentions: extractMentions(newComment),
+      reactions: []
+    };
+    
+    const updatedProject = {
+      ...project,
+      comments: [...(project.comments || []), newCommentObj]
+    };
+    
+    updateProject(updatedProject);
+    setNewComment('');
+    toast.success('Comment added successfully');
+    
+    // Scroll to bottom of comments section
+    setTimeout(() => {
+      if (commentSectionRef.current) {
+        commentSectionRef.current.scrollTop = commentSectionRef.current.scrollHeight;
+      }
+    }, 100);
+  };
+  
+  const extractMentions = (text: string) => {
+    const mentionRegex = /@(\w+)/g;
+    const matches = text.match(mentionRegex);
+    return matches ? matches.map(match => match.substring(1)) : [];
+  };
+  
+  const handleReaction = (commentId: string, emoji: string) => {
+    const updatedProject = { ...project };
+    const commentIndex = updatedProject.comments?.findIndex(c => c.id === commentId);
+    
+    if (commentIndex !== undefined && commentIndex >= 0 && updatedProject.comments) {
+      const comment = updatedProject.comments[commentIndex];
+      
+      const existingReactionIndex = comment.reactions?.findIndex(r => r.emoji === emoji);
+      
+      if (existingReactionIndex !== undefined && existingReactionIndex >= 0 && comment.reactions) {
+        // User has already reacted with this emoji
+        const existingReaction = comment.reactions[existingReactionIndex];
+        
+        if (existingReaction.users.includes('Current User')) {
+          // Remove user from the reaction
+          existingReaction.users = existingReaction.users.filter(u => u !== 'Current User');
+          existingReaction.count = existingReaction.count - 1;
+          
+          // Remove reaction entirely if no users left
+          if (existingReaction.count === 0) {
+            comment.reactions = comment.reactions.filter(r => r.emoji !== emoji);
+          }
+        } else {
+          // Add user to the reaction
+          existingReaction.users.push('Current User');
+          existingReaction.count = existingReaction.count + 1;
+        }
+      } else {
+        // First reaction with this emoji
+        if (!comment.reactions) {
+          comment.reactions = [];
+        }
+        
+        comment.reactions.push({
+          emoji,
+          count: 1,
+          users: ['Current User']
+        });
+      }
+      
+      updateProject(updatedProject);
     }
+    
+    setShowReactionPicker(null);
+  };
+  
+  const formatMentions = (text: string) => {
+    return text.replace(/@(\w+)/g, '<span class="text-blue-500 font-medium">@$1</span>');
   };
   
   return (
@@ -327,46 +432,174 @@ const ProjectDetail = () => {
           <TabsContent value="comments" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Comments ({project.comments?.length || 0})</h2>
-              <Button>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Add Comment
-              </Button>
             </div>
             
-            {project.comments && project.comments.length > 0 ? (
-              <div className="space-y-4">
-                {project.comments.map((comment: ProjectComment) => (
-                  <Card key={comment.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Avatar>
-                          <AvatarFallback>
-                            {comment.author.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">{comment.author}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(comment.createdAt), 'MMM d, h:mm a')}
-                            </span>
+            <Card className="mb-0">
+              <CardContent className="p-0">
+                {/* Comments Display */}
+                <div 
+                  ref={commentSectionRef}
+                  className="max-h-[500px] overflow-y-auto p-4 space-y-4"
+                >
+                  {project.comments && project.comments.length > 0 ? (
+                    project.comments.map((comment: ProjectComment) => (
+                      <div key={comment.id} className="relative group">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="mt-0.5">
+                            <AvatarFallback>
+                              {comment.author.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium">{comment.author}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(comment.createdAt), 'MMM d, h:mm a')}
+                              </span>
+                            </div>
+                            
+                            {/* Comment content with formatted mentions */}
+                            <div className="prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: formatMentions(comment.text) }}
+                            />
+                            
+                            {/* Comment actions */}
+                            <div className="flex items-center gap-2 mt-2">
+                              <div className="flex flex-wrap gap-1">
+                                {comment.reactions && comment.reactions.map((reaction) => (
+                                  <button 
+                                    key={reaction.emoji}
+                                    onClick={() => handleReaction(comment.id, reaction.emoji)}
+                                    className={`text-xs px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                                      reaction.users.includes('Current User') 
+                                        ? 'bg-blue-100 text-blue-800' 
+                                        : 'bg-gray-100 hover:bg-gray-200'
+                                    }`}
+                                  >
+                                    <span>{reaction.emoji}</span>
+                                    <span>{reaction.count}</span>
+                                  </button>
+                                ))}
+                              </div>
+                              
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                                <button 
+                                  onClick={() => setShowReactionPicker(comment.id)}
+                                  className="text-xs text-gray-500 hover:text-gray-700"
+                                >
+                                  <Smile className="h-3.5 w-3.5" />
+                                </button>
+                                <button 
+                                  onClick={() => setReplyingTo(comment.id)}
+                                  className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                                >
+                                  <Reply className="h-3.5 w-3.5" />
+                                  <span>Reply</span>
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {/* Reaction picker */}
+                            {showReactionPicker === comment.id && (
+                              <div className="absolute z-10 mt-1 p-1 bg-white border rounded-lg shadow-lg flex">
+                                {reactionEmojis.map(emoji => (
+                                  <button
+                                    key={emoji}
+                                    onClick={() => handleReaction(comment.id, emoji)}
+                                    className="p-1.5 hover:bg-gray-100 rounded"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {/* Reply box */}
+                            {replyingTo === comment.id && (
+                              <div className="mt-2 pl-2 border-l-2 border-gray-200">
+                                <div className="flex items-start gap-2">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarFallback className="text-xs">CU</AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1">
+                                    <Textarea 
+                                      placeholder={`Reply to ${comment.author}...`}
+                                      className="min-h-[60px] text-sm"
+                                      value={newComment}
+                                      onChange={(e) => setNewComment(e.target.value)}
+                                    />
+                                    <div className="flex justify-end gap-2 mt-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => setReplyingTo(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        size="sm"
+                                        onClick={handleAddComment}
+                                      >
+                                        Reply
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <p className="mt-1">{comment.text}</p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-muted rounded-lg">
-                <p className="text-muted-foreground">No comments yet.</p>
-                <Button className="mt-2">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Add the first comment
-                </Button>
-              </div>
-            )}
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No comments yet. Start the conversation!</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Comment input area */}
+                <div className="border-t p-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar>
+                      <AvatarFallback>CU</AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 space-y-2">
+                      <Textarea 
+                        placeholder="Add a comment..."
+                        className="min-h-[80px] resize-none"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                      />
+                      
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <button className="hover:text-foreground">
+                            <AtSign className="h-4 w-4" />
+                          </button>
+                          <button className="hover:text-foreground">
+                            <PaperclipIcon className="h-4 w-4" />
+                          </button>
+                          <button className="hover:text-foreground">
+                            <Smile className="h-4 w-4" />
+                          </button>
+                        </div>
+                        
+                        <Button 
+                          onClick={handleAddComment}
+                          className="gap-2"
+                          disabled={!newComment.trim()}
+                        >
+                          <SendIcon className="h-4 w-4" />
+                          Send
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
