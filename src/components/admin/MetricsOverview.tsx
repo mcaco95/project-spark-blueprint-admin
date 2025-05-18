@@ -110,14 +110,14 @@ export const MetricsOverview = () => {
                     fill="#8884d8"
                     dataKey="value"
                     nameKey="name"
-                    label={({ name, percent }) => `${t(name, { ns: 'projects' })} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${t(name.toString(), { ns: 'projects' })} ${(percent * 100).toFixed(0)}%`}
                   >
                     {projectStatusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value, name) => [value, t(name, { ns: 'projects' })]} 
+                    formatter={(value, name) => [value, t(name.toString(), { ns: 'projects' })]} 
                   />
                 </PieChart>
               </ResponsiveContainer>
