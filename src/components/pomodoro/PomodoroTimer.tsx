@@ -16,17 +16,31 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import PomodoroSettings from './PomodoroSettings';
+import PomodoroTaskSelector from './PomodoroTaskSelector';
 
 const getTimerStateColor = (state: TimerState): string => {
   switch (state) {
     case 'focus':
-      return 'bg-red-500';
+      return 'bg-[#ea384c]';
     case 'shortBreak':
-      return 'bg-green-500';
+      return 'bg-[#F2FCE2]';
     case 'longBreak':
-      return 'bg-blue-500';
+      return 'bg-[#D3E4FD]';
     default:
       return 'bg-gray-500';
+  }
+};
+
+const getTimerStateTextColor = (state: TimerState): string => {
+  switch (state) {
+    case 'focus':
+      return 'text-white';
+    case 'shortBreak':
+      return 'text-gray-800';
+    case 'longBreak':
+      return 'text-gray-800';
+    default:
+      return 'text-white';
   }
 };
 
@@ -130,7 +144,10 @@ export const PomodoroTimer: React.FC = () => {
 
           <div className="mb-2">
             <div className="flex justify-between items-center">
-              <Badge variant={timerState === 'idle' ? 'outline' : 'secondary'} className="mb-2">
+              <Badge 
+                variant={timerState === 'idle' ? 'outline' : 'secondary'} 
+                className={`mb-2 ${timerState !== 'idle' ? getTimerStateColor(timerState) + ' ' + getTimerStateTextColor(timerState) : ''}`}
+              >
                 {getTimerStateLabel(timerState)}
               </Badge>
               <span className="text-sm text-muted-foreground">
@@ -142,27 +159,28 @@ export const PomodoroTimer: React.FC = () => {
               <span className="text-3xl font-bold">{formatTime(secondsLeft)}</span>
             </div>
             
-            <Progress value={progress} className="h-2 mb-4" />
+            <Progress 
+              value={progress} 
+              className={`h-2 mb-4 ${timerState !== 'idle' ? getTimerStateColor(timerState) : ''}`}
+            />
           </div>
 
-          {currentTask && (
-            <div className="mb-4 p-2 bg-muted rounded-md text-sm">
-              <p className="font-medium">Current Task:</p>
-              <p className="truncate">{currentTask.title}</p>
-            </div>
-          )}
+          {/* Task Selector Component */}
+          <div className="mb-4">
+            <PomodoroTaskSelector />
+          </div>
 
           <div className="grid grid-cols-2 gap-2 mb-2">
             <Button 
               variant="outline"
-              className="text-xs" 
+              className={`text-xs ${timerState === 'focus' ? getTimerStateColor(timerState) + ' ' + getTimerStateTextColor(timerState) : ''}`}
               onClick={() => startFocus()}
             >
               Focus
             </Button>
             <Button 
               variant="outline" 
-              className="text-xs"
+              className={`text-xs ${timerState === 'shortBreak' ? getTimerStateColor(timerState) + ' ' + getTimerStateTextColor(timerState) : ''}`}
               onClick={() => startShortBreak()}
             >
               Short Break
@@ -172,7 +190,7 @@ export const PomodoroTimer: React.FC = () => {
           <div className="flex justify-between">
             <Button 
               variant="outline" 
-              className="text-xs"
+              className={`text-xs ${timerState === 'longBreak' ? getTimerStateColor(timerState) + ' ' + getTimerStateTextColor(timerState) : ''}`}
               onClick={() => startLongBreak()}
             >
               Long Break

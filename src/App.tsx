@@ -8,7 +8,6 @@ import { TaskProvider } from "@/contexts/TaskContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PomodoroProvider } from "@/contexts/PomodoroContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import PomodoroTimer from "@/components/pomodoro/PomodoroTimer";
 
 // Pages
 import Index from "./pages/Index";
@@ -24,7 +23,8 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Unauthorized from "./pages/Unauthorized";
-import Messaging from "./pages/Messaging"; // New import
+import Messaging from "./pages/Messaging";
+import PomodoroTasksPage from "./pages/PomodoroTasksPage";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +76,11 @@ const App = () => {
                       <TaskDetail />
                     </ProtectedRoute>
                   } />
+                  <Route path="/pomodoro" element={
+                    <ProtectedRoute>
+                      <PomodoroTasksPage />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/messaging" element={
                     <ProtectedRoute>
                       <Messaging />
@@ -107,9 +112,6 @@ const App = () => {
                   {/* Catch all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                
-                {/* Pomodoro Timer (visible on all pages) */}
-                <PomodoroTimer />
               </TooltipProvider>
             </PomodoroProvider>
           </TaskProvider>

@@ -25,6 +25,12 @@ export type TimerSettings = {
   notificationsEnabled: boolean;
 };
 
+export type TaskPomodoro = {
+  taskId: string;
+  estimatedPomodoros: number;
+  completedPomodoros: number;
+};
+
 type PomodoroContextType = {
   timerState: TimerState;
   settings: TimerSettings;
@@ -43,6 +49,15 @@ type PomodoroContextType = {
   updateSettings: (newSettings: Partial<TimerSettings>) => void;
   isTimerActive: boolean;
   progress: number;
+  taskPomodoros: TaskPomodoro[];
+  getTaskPomodoros: (taskId: string) => TaskPomodoro | undefined;
+  updateTaskPomodoros: (taskId: string, estimatedPomodoros: number) => void;
+  incrementTaskCompletedPomodoros: (taskId: string) => void;
+  addTaskToPomodoros: (taskId: string, estimatedPomodoros?: number) => void;
+  removeTaskFromPomodoros: (taskId: string) => void;
+  activeTaskIds: string[];
+  addTaskToActive: (taskId: string) => void;
+  removeTaskFromActive: (taskId: string) => void;
 };
 
 const DEFAULT_SETTINGS: TimerSettings = {
@@ -76,6 +91,14 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
   const [completedCycles, setCompletedCycles] = useState<number>(0);
   const [completedPomodoros, setCompletedPomodoros] = useState<number>(0);
   const [targetSeconds, setTargetSeconds] = useState<number>(0);
+  const [taskPomodoros, setTaskPomodoros] = useState<TaskPomodoro[]>(() => {
+    const saved = localStorage.getItem('taskPomodoros');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [activeTaskIds, setActiveTaskIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('activeTaskIds');
+    return saved ? JSON.parse(saved) : [];
+  });
   
   // Calculate progress percentage (0-100)
   const progress = targetSeconds > 0 ? 100 - ((secondsLeft / targetSeconds) * 100) : 0;
@@ -88,11 +111,100 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
   }, [settings]);
 
+  // Save task pomodoros to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('taskPomodoros', JSON.stringify(taskPomodoros));
+  }, [taskPomodoros]);
+
+  // Save active task IDs to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('activeTaskIds', JSON.stringify(activeTaskIds));
+  }, [activeTaskIds]);
+
+  // Get task pomodoro information
+  const getTaskPomodoros = useCallback((taskId: string) => {
+    return taskPomodoros.find(tp => tp.taskId === taskId);
+  }, [taskPomodoros]);
+
+  // Update task pomodoro estimates
+  const updateTaskPomodoros = useCallback((taskId: string, estimatedPomodoros: number) => {
+    setTaskPomodoros(prev => {
+      const existing = prev.find(tp => tp.taskId === taskId);
+      if (existing) {
+        return prev.map(tp => 
+          tp.taskId === taskId 
+            ? { ...tp, estimatedPomodoros } 
+            : tp
+        );
+      } else {
+        return [
+          ...prev,
+          { taskId, estimatedPomodoros, completedPomodoros: 0 }
+        ];
+      }
+    });
+  }, []);
+
+  // Increment completed pomodoros for a task
+  const incrementTaskCompletedPomodoros = useCallback((taskId: string) => {
+    setTaskPomodoros(prev => {
+      const existing = prev.find(tp => tp.taskId === taskId);
+      if (existing) {
+        return prev.map(tp => 
+          tp.taskId === taskId 
+            ? { ...tp, completedPomodoros: tp.completedPomodoros + 1 } 
+            : tp
+        );
+      }
+      return prev;
+    });
+  }, []);
+
+  // Add a task to pomodoro tracking
+  const addTaskToPomodoros = useCallback((taskId: string, estimatedPomodoros: number = 1) => {
+    setTaskPomodoros(prev => {
+      if (prev.some(tp => tp.taskId === taskId)) {
+        return prev;
+      }
+      return [
+        ...prev,
+        { taskId, estimatedPomodoros, completedPomodoros: 0 }
+      ];
+    });
+    addTaskToActive(taskId);
+  }, []);
+
+  // Remove a task from pomodoro tracking
+  const removeTaskFromPomodoros = useCallback((taskId: string) => {
+    setTaskPomodoros(prev => prev.filter(tp => tp.taskId !== taskId));
+    removeTaskFromActive(taskId);
+  }, []);
+
+  // Add a task to active tasks
+  const addTaskToActive = useCallback((taskId: string) => {
+    setActiveTaskIds(prev => {
+      if (prev.includes(taskId)) {
+        return prev;
+      }
+      return [...prev, taskId];
+    });
+  }, []);
+
+  // Remove a task from active tasks
+  const removeTaskFromActive = useCallback((taskId: string) => {
+    setActiveTaskIds(prev => prev.filter(id => id !== taskId));
+  }, []);
+
   // Handle timer completion
   const handleTimerComplete = useCallback(() => {
     if (timerState === 'focus') {
       // Completed a focus session
       setCompletedPomodoros(prev => prev + 1);
+      
+      // Increment task completed pomodoros if there is a current task
+      if (currentTask) {
+        incrementTaskCompletedPomodoros(currentTask.id);
+      }
       
       const newCycleCount = completedCycles + 1;
       setCompletedCycles(newCycleCount);
@@ -153,7 +265,7 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
         setTimerState('idle');
       }
     }
-  }, [timerState, completedCycles, settings, currentTask, toast]);
+  }, [timerState, completedCycles, settings, currentTask, toast, incrementTaskCompletedPomodoros]);
 
   // Request notification permission when needed
   useEffect(() => {
@@ -314,6 +426,15 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
     updateSettings,
     isTimerActive,
     progress,
+    taskPomodoros,
+    getTaskPomodoros,
+    updateTaskPomodoros,
+    incrementTaskCompletedPomodoros,
+    addTaskToPomodoros,
+    removeTaskFromPomodoros,
+    activeTaskIds,
+    addTaskToActive,
+    removeTaskFromActive,
   };
 
   return (

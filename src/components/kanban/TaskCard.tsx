@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useTaskContext } from '@/contexts/TaskContext';
 import { usePomodoroContext } from '@/contexts/PomodoroContext';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface TaskCardProps {
   task: Task;
@@ -24,7 +26,13 @@ const priorityColors = {
 
 export function TaskCard({ task, isDragging, onEdit }: TaskCardProps) {
   const { deleteTask } = useTaskContext();
-  const { setCurrentTask, startFocus, currentTask } = usePomodoroContext();
+  const { 
+    setCurrentTask, 
+    startFocus, 
+    currentTask, 
+    getTaskPomodoros,
+    addTaskToPomodoros
+  } = usePomodoroContext();
   const navigate = useNavigate();
   
   const handleCardClick = (e: React.MouseEvent) => {
@@ -51,10 +59,20 @@ export function TaskCard({ task, isDragging, onEdit }: TaskCardProps) {
   const handleStartPomodoroClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     setCurrentTask(task);
+    
+    // Add to pomodoros if not already there
+    if (!getTaskPomodoros(task.id)) {
+      addTaskToPomodoros(task.id);
+    }
+    
     startFocus();
   };
 
   const isCurrentPomodoroTask = currentTask?.id === task.id;
+  const taskPomodoro = getTaskPomodoros(task.id);
+  const pomodoroProgress = taskPomodoro 
+    ? (taskPomodoro.completedPomodoros / taskPomodoro.estimatedPomodoros) * 100
+    : 0;
 
   return (
     <Card 
@@ -86,7 +104,32 @@ export function TaskCard({ task, isDragging, onEdit }: TaskCardProps) {
               <Timer className="h-3 w-3 mr-1" /> Active
             </Badge>
           )}
+
+          {taskPomodoro && (
+            <Badge variant="outline" className="text-xs">
+              <Timer className="h-3 w-3 mr-1" />
+              {taskPomodoro.completedPomodoros}/{taskPomodoro.estimatedPomodoros}
+            </Badge>
+          )}
         </div>
+
+        {taskPomodoro && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="mt-2">
+                  <Progress 
+                    value={pomodoroProgress} 
+                    className="h-1" 
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {taskPomodoro.completedPomodoros} of {taskPomodoro.estimatedPomodoros} pomodoros completed
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </CardContent>
       <CardFooter className="px-4 py-2 flex justify-between">
         <div className="flex -space-x-1">

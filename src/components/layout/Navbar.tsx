@@ -29,11 +29,13 @@ import {
   Users,
   LogOut,
   User,
-  MessageSquare
+  MessageSquare,
+  Timer
 } from 'lucide-react';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import NavbarPomodoroTimer from '../pomodoro/NavbarPomodoroTimer';
 
 export const Navbar = () => {
   const { t } = useTranslation('common');
@@ -117,6 +119,15 @@ export const Navbar = () => {
 
               <NavigationMenuItem>
                 <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                  <Link to="/pomodoro" className="flex items-center gap-2">
+                    <Timer className="h-4 w-4" />
+                    <span>Pomodoro</span>
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                   <Link to="/messaging" className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
                     <span>Messaging</span>
@@ -157,6 +168,10 @@ export const Navbar = () => {
         )}
 
         <div className="ml-auto flex items-center space-x-4">
+          {isAuthenticated && (
+            <NavbarPomodoroTimer />
+          )}
+          
           <LanguageSwitcher />
           
           {isAuthenticated && user ? (
