@@ -16,28 +16,32 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <TaskProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/tasks/kanban" element={<TaskKanban />} />
-            <Route path="/tasks/timeline" element={<TaskTimeline />} />
-            <Route path="/files" element={<FileManager />} />
-            <Route path="/admin" element={<AdminConsole />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TaskProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+// Wrap App in a function component to ensure hooks work correctly
+const App = () => {
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <TaskProvider>
+          {/* Move TooltipProvider inside other providers */}
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/tasks/kanban" element={<TaskKanban />} />
+              <Route path="/tasks/timeline" element={<TaskTimeline />} />
+              <Route path="/files" element={<FileManager />} />
+              <Route path="/admin" element={<AdminConsole />} />
+              <Route path="/settings" element={<Settings />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </TaskProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+};
 
 export default App;
