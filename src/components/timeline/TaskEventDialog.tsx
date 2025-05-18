@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -66,6 +67,9 @@ const availableUsers = [
   { id: '6', name: 'Designer 2' },
 ];
 
+// Define the recurrence type
+type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | null;
+
 const TaskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   date: z.date(),
@@ -74,7 +78,7 @@ const TaskFormSchema = z.object({
   project: z.string(),
   assignees: z.array(z.string()).min(1, 'At least one assignee is required'),
   description: z.string().optional(),
-  recurrence: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']).optional(),
+  recurrence: z.union([z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']), z.null()]).optional(),
 });
 
 type TaskFormValues = z.infer<typeof TaskFormSchema>;
@@ -90,7 +94,7 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
     project: availableProjects[0].id || '',
     assignees: [],
     description: '',
-    recurrence: undefined,
+    recurrence: null,
   };
 
   const form = useForm<TaskFormValues>({
@@ -113,7 +117,7 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
         project: task.projectId || task.project,
         assignees: task.assignees,
         description: task.description || '',
-        recurrence: task.recurrence as 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | undefined,
+        recurrence: task.recurrence as RecurrenceType || null,
       });
     } else {
       form.reset(defaultValues);
@@ -133,7 +137,7 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
       projectId: projectInfo?.id || null,
       assignees: data.assignees,
       description: data.description,
-      recurrence: data.recurrence,
+      recurrence: data.recurrence || undefined,
       comments: task?.comments || [],
     };
 
@@ -343,9 +347,8 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
                 <FormItem>
                   <FormLabel>{t('recurrence', { ns: 'tasks' })}</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
+                    onValueChange={(value) => field.onChange(value || null)}
+                    value={field.value || null}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -353,7 +356,7 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">{t('noRecurrence', { ns: 'tasks' })}</SelectItem>
+                      <SelectItem value="none">{t('noRecurrence', { ns: 'tasks' })}</SelectItem>
                       <SelectItem value="daily">{t('daily', { ns: 'tasks' })}</SelectItem>
                       <SelectItem value="weekly">{t('weekly', { ns: 'tasks' })}</SelectItem>
                       <SelectItem value="monthly">{t('monthly', { ns: 'tasks' })}</SelectItem>
