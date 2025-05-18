@@ -30,6 +30,7 @@ interface TaskDialogProps {
   onClose: () => void;
   editingTask: Task | null;
   defaultProject?: string;
+  onSave?: (task: Task) => void;
 }
 
 // Mock projects for the dialog
@@ -49,7 +50,7 @@ const availableUsers = [
   { name: 'Designer 2' },
 ];
 
-export function TaskDialog({ isOpen, onClose, editingTask, defaultProject }: TaskDialogProps) {
+export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSave }: TaskDialogProps) {
   const { addTask, updateTask } = useTaskContext();
   const navigate = useNavigate();
   
@@ -116,10 +117,15 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject }: Tas
       addTask({ id: taskId, ...taskData });
     }
     
-    onClose();
-    
-    // Navigate to task detail page
-    navigate(`/tasks/${taskId}`);
+    // If onSave is provided, call it with the task data
+    if (onSave) {
+      onSave({ id: taskId, ...taskData });
+    } else {
+      onClose();
+      
+      // Navigate to task detail page
+      navigate(`/tasks/${taskId}`);
+    }
   };
 
   const handleAddAssignee = () => {
