@@ -18,7 +18,7 @@ import Settings from '@/pages/Settings';
 import AdminConsole from '@/pages/AdminConsole';
 import NotFound from '@/pages/NotFound';
 import Unauthorized from '@/pages/Unauthorized';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { TaskProvider } from '@/contexts/tasks/TaskContext';
 import { FileProvider } from '@/contexts/files/FileContext';
