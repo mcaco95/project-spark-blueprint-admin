@@ -1,10 +1,9 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useProjectsData } from '@/hooks/useProjectsData';
-import { useTaskContext } from '@/contexts/TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

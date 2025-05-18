@@ -45,7 +45,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { TaskEventDialog } from '@/components/timeline/TaskEventDialog';
 import { Task, ViewMode } from '@/types/task';
-import { useTaskContext } from '@/contexts/TaskContext';
+import { useTaskContext } from '@/contexts/tasks/TaskContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from 'sonner';
