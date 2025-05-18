@@ -43,20 +43,18 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/projects" element={<Projects />} />
-                    <Route path="/projects/:id" element={<ProjectDetail />} />
-                    <Route path="/tasks" element={<Tasks />} />
-                    <Route path="/tasks/:id" element={<TaskDetail />} />
-                    <Route path="/kanban" element={<TaskKanban />} />
-                    <Route path="/timeline" element={<TaskTimeline />} />
-                    <Route path="/files" element={<FileManager />} />
-                    <Route path="/messaging" element={<Messaging />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/pomodoro" element={<PomodoroTasksPage />} />
-                    
-                    <Route path="/admin" element={<AdminConsole />} />
-                  </Route>
+                  <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+                  <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+                  <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+                  <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetail /></ProtectedRoute>} />
+                  <Route path="/kanban" element={<ProtectedRoute><TaskKanban /></ProtectedRoute>} />
+                  <Route path="/timeline" element={<ProtectedRoute><TaskTimeline /></ProtectedRoute>} />
+                  <Route path="/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
+                  <Route path="/messaging" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
+                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                  <Route path="/pomodoro" element={<ProtectedRoute><PomodoroTasksPage /></ProtectedRoute>} />
+                  
+                  <Route path="/admin" element={<ProtectedRoute><AdminConsole /></ProtectedRoute>} />
                   
                   <Route path="/unauthorized" element={<Unauthorized />} />
                   <Route path="*" element={<NotFound />} />
