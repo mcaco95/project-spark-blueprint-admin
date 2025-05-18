@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -33,6 +32,7 @@ interface TaskDialogProps {
   editingTask: Task | null;
   defaultProject?: string;
   onSave?: (task: Task) => void;
+  initialDate?: Date;
 }
 
 // Mock projects for the dialog
@@ -52,7 +52,7 @@ const availableUsers = [
   { name: 'Designer 2' },
 ];
 
-export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSave }: TaskDialogProps) {
+export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSave, initialDate }: TaskDialogProps) {
   const { addTask, updateTask } = useTaskContext();
   const navigate = useNavigate();
   
@@ -65,13 +65,11 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
   const [projectId, setProjectId] = React.useState<string>('');
   const [projectName, setProjectName] = React.useState<string>('');
   
-  // New state for task view options
-  const [showInKanban, setShowInKanban] = React.useState<boolean>(true);
-  const [showInTimeline, setShowInTimeline] = React.useState<boolean>(false);
+  // Date and time fields are always available
   const [date, setDate] = React.useState<string>('');
   const [time, setTime] = React.useState<string>('');
   const [duration, setDuration] = React.useState<number>(30);
-  const [showTimelineFields, setShowTimelineFields] = React.useState<boolean>(false);
+  const [showTimeFields, setShowTimeFields] = React.useState<boolean>(false);
 
   // Reset form or populate with task data when opening
   useEffect(() => {
@@ -85,27 +83,21 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
         setProjectId(editingTask.projectId || '1');
         setProjectName(editingTask.project || 'Website Redesign');
         
-        // Set view options
-        setShowInKanban(editingTask.showInKanban !== false);
-        setShowInTimeline(editingTask.showInTimeline === true);
-        
-        // Set timeline fields if available
+        // Set date/time fields if available
         setDate(editingTask.date || '');
         setTime(editingTask.time || '');
         setDuration(editingTask.duration || 30);
-        setShowTimelineFields(editingTask.showInTimeline === true || !!(editingTask.date && editingTask.time));
+        setShowTimeFields(!!(editingTask.date || editingTask.time));
       } else {
         setTitle('');
         setDescription('');
         setStatus('todo');
         setPriority('medium');
         setAssignees([]);
-        setShowInKanban(true);
-        setShowInTimeline(false);
-        setDate('');
+        setDate(initialDate ? initialDate.toISOString().split('T')[0] : '');
         setTime('');
         setDuration(30);
-        setShowTimelineFields(false);
+        setShowTimeFields(!!initialDate);
         
         // Use defaultProject if provided
         if (defaultProject) {
@@ -118,7 +110,7 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
         }
       }
     }
-  }, [isOpen, editingTask, defaultProject]);
+  }, [isOpen, editingTask, defaultProject, initialDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,14 +123,18 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
       assignees,
       projectId,
       project: projectName,
-      showInKanban,
-      showInTimeline,
     };
 
-    // Add timeline-specific fields if showing in timeline
-    if (showInTimeline) {
+    // Add date/time fields only if they have values
+    if (date) {
       taskData.date = date;
+    }
+    
+    if (time) {
       taskData.time = time;
+    }
+    
+    if (date && time && duration) {
       taskData.duration = duration;
     }
     
@@ -180,9 +176,12 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
     setProjectName(project ? project.name : '');
   };
 
-  const handleShowInTimelineChange = (checked: boolean) => {
-    setShowInTimeline(checked);
-    setShowTimelineFields(checked);
+  const toggleTimeFields = () => {
+    setShowTimeFields(!showTimeFields);
+    if (!showTimeFields && !date) {
+      const today = new Date();
+      setDate(today.toISOString().split('T')[0]);
+    }
   };
 
   return (
@@ -276,31 +275,23 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
               </Select>
             </div>
             
-            {/* View Options */}
+            {/* Date and Time Fields */}
             <div className="grid grid-cols-4 items-start gap-4">
-              <Label className="text-right pt-2">View Options</Label>
-              <div className="col-span-3 space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="show-in-kanban" 
-                    checked={showInKanban} 
-                    onCheckedChange={(checked) => setShowInKanban(checked as boolean)}
-                  />
-                  <Label htmlFor="show-in-kanban">Show in Kanban board</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="show-in-timeline" 
-                    checked={showInTimeline}
-                    onCheckedChange={(checked) => handleShowInTimelineChange(checked as boolean)}
-                  />
-                  <Label htmlFor="show-in-timeline">Show in Timeline view</Label>
-                </div>
+              <Label className="text-right pt-2">Scheduling</Label>
+              <div className="col-span-3">
+                <Button
+                  type="button"
+                  variant={showTimeFields ? "default" : "outline"}
+                  onClick={toggleTimeFields}
+                  size="sm"
+                >
+                  {showTimeFields ? "Hide Schedule Options" : "Schedule This Task"}
+                </Button>
               </div>
             </div>
             
-            {/* Timeline Fields */}
-            {showTimelineFields && (
+            {/* Show date/time fields conditionally */}
+            {showTimeFields && (
               <>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="date" className="text-right">Date</Label>
@@ -312,7 +303,6 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
                       className="flex-1"
-                      required={showInTimeline}
                     />
                   </div>
                 </div>
@@ -327,7 +317,6 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                       value={time}
                       onChange={(e) => setTime(e.target.value)}
                       className="flex-1"
-                      required={showInTimeline}
                     />
                   </div>
                 </div>
@@ -342,7 +331,6 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                     value={duration}
                     onChange={(e) => setDuration(parseInt(e.target.value) || 30)}
                     className="col-span-3"
-                    required={showInTimeline}
                   />
                 </div>
               </>

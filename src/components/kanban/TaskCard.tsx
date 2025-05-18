@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Task } from '@/types/task';
@@ -108,11 +107,11 @@ export function TaskCard({ task, isDragging, onEdit }: TaskCardProps) {
             </Badge>
           )}
           
-          {/* Show timeline indicator if task is also in timeline view */}
-          {task.showInTimeline && (
+          {/* Show date if available */}
+          {task.date && (
             <Badge variant="outline" className="text-xs">
               <Calendar className="h-3 w-3 mr-1" />
-              {task.date && formatDate(task.date)}
+              {formatDate(task.date)}
             </Badge>
           )}
           

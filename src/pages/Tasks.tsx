@@ -9,7 +9,7 @@ import { KanbanView } from '@/components/tasks/KanbanView';
 import { ListView } from '@/components/tasks/ListView';
 import { CalendarView } from '@/components/tasks/CalendarView';
 import { TimelineView } from '@/components/tasks/TimelineView';
-import { Kanban, List, Calendar, Timeline } from 'lucide-react';
+import { Kanban, List, Calendar, GanttChart } from 'lucide-react';
 
 const TasksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,7 +66,7 @@ const TasksPage = () => {
                 Calendar
               </ToggleGroupItem>
               <ToggleGroupItem value="timeline" aria-label="Timeline view">
-                <Timeline className="h-4 w-4 mr-2" />
+                <GanttChart className="h-4 w-4 mr-2" />
                 Timeline
               </ToggleGroupItem>
             </ToggleGroup>
