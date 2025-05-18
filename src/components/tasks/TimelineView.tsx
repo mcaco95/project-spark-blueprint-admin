@@ -127,7 +127,10 @@ export function TimelineView() {
               className="w-full h-8 text-xs mt-2"
               onClick={() => {
                 setEditingTask({
-                  ...editingTask,
+                  id: '',
+                  title: '',
+                  assignees: [],
+                  status: 'todo',
                   date: format(day, 'yyyy-MM-dd')
                 } as Task);
                 setIsDialogOpen(true);

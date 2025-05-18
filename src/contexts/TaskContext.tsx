@@ -258,7 +258,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize board with tasks that should be in Kanban on first load
   useEffect(() => {
-    const kanbanTasks = tasks.filter(task => task.showInKanban);
+    const kanbanTasks = tasks.filter(task => task.showInKanban !== false);
     
     if (kanbanTasks.length > 0) {
       const boardTasks: Record<string, Task> = {};
@@ -310,12 +310,18 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   
   // Get tasks for Kanban view
   const getKanbanTasks = () => {
-    return tasks.filter(task => task.showInKanban);
+    return tasks.filter(task => 
+      // Consider all tasks for kanban view if they don't explicitly have showInKanban=false
+      task.showInKanban !== false
+    );
   };
   
   // Get tasks for Timeline view
   const getTimelineTasks = () => {
-    return tasks.filter(task => task.showInTimeline || (task.date && task.time));
+    return tasks.filter(task => 
+      // Include tasks that have showInTimeline=true or have date and time
+      task.showInTimeline || (task.date && task.time)
+    );
   };
 
   // Get task by ID
@@ -333,7 +339,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     const newTaskId = task.id || `task-${uuidv4()}`;
     
     // Determine which view(s) the task should appear in
-    const showInTimeline = task.date && task.time ? true : task.showInTimeline;
+    const showInTimeline = task.showInTimeline || (task.date && task.time) ? true : task.showInTimeline;
     const showInKanban = task.showInKanban !== undefined 
       ? task.showInKanban 
       : (!task.date && !task.time) || task.showInKanban;
@@ -421,7 +427,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => prev.map(t => t.id === task.id ? task : t));
     
     // Update in Kanban board if task should be in Kanban view
-    if (task.showInKanban) {
+    if (task.showInKanban !== false) {
       setBoard((prev) => {
         // Check if the task status has changed
         const oldTask = prev.tasks[task.id];

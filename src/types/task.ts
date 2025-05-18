@@ -39,6 +39,10 @@ export interface Task {
   recurrence?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
   comments?: TaskComment[];
   color?: string; // Support for custom task colors
+  
+  // Temporary properties to support transition
+  showInKanban?: boolean;
+  showInTimeline?: boolean;
 }
 
 export interface Column {
@@ -66,4 +70,5 @@ export interface Notification {
   createdAt: Date;
 }
 
-export type ViewMode = 'kanban' | 'list' | 'calendar' | 'timeline';
+// Update ViewMode to include the timeline-specific view modes
+export type ViewMode = 'kanban' | 'list' | 'calendar' | 'timeline' | 'day' | 'week' | 'month' | 'quarter' | 'year';
