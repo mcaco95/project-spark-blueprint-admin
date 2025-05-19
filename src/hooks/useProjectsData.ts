@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Project } from "@/types/project";
 import { Task } from "@/types/task";
+import { ensureTaskType } from "./useTaskTypeSetter";
 
 const initialProjects: Project[] = [
   {
@@ -13,10 +13,10 @@ const initialProjects: Project[] = [
     status: "active",
     priority: "high",
     progress: 65,
-    startDate: new Date("2024-02-15").toISOString(),
-    endDate: new Date("2024-07-20").toISOString(),
-    createdAt: new Date("2024-02-10").toISOString(),
-    updatedAt: new Date("2024-05-05").toISOString(),
+    startDate: new Date("2024-02-15"),
+    endDate: new Date("2024-07-20"),
+    createdAt: new Date("2024-02-10"),
+    updatedAt: new Date("2024-05-05"),
     createdBy: "Jane Smith",
     teamMembers: ["Jane Smith", "Mike Johnson", "Sarah Lee", "David Kim"],
     tasks: [
@@ -55,10 +55,10 @@ const initialProjects: Project[] = [
     status: "planning",
     priority: "medium",
     progress: 25,
-    startDate: new Date("2024-04-01").toISOString(),
-    endDate: new Date("2024-09-30").toISOString(),
-    createdAt: new Date("2024-03-15").toISOString(),
-    updatedAt: new Date("2024-04-10").toISOString(),
+    startDate: new Date("2024-04-01"),
+    endDate: new Date("2024-09-30"),
+    createdAt: new Date("2024-03-15"),
+    updatedAt: new Date("2024-04-10"),
     createdBy: "Robert Chen",
     teamMembers: ["Robert Chen", "Emma Wilson", "James Taylor"],
     tasks: [
@@ -89,10 +89,10 @@ const initialProjects: Project[] = [
     status: "active",
     priority: "high",
     progress: 40,
-    startDate: new Date("2024-04-15").toISOString(),
-    endDate: new Date("2024-08-15").toISOString(),
-    createdAt: new Date("2024-04-10").toISOString(),
-    updatedAt: new Date("2024-05-01").toISOString(),
+    startDate: new Date("2024-04-15"),
+    endDate: new Date("2024-08-15"),
+    createdAt: new Date("2024-04-10"),
+    updatedAt: new Date("2024-05-01"),
     createdBy: "Lisa Johnson",
     teamMembers: ["Lisa Johnson", "Mark Williams", "Anna Brown"],
     tasks: [
@@ -123,8 +123,8 @@ const initialProjects: Project[] = [
     status: "planning",
     priority: "medium",
     progress: 15,
-    startDate: new Date("2024-05-01").toISOString(),
-    createdAt: new Date("2024-04-25").toISOString(),
+    startDate: new Date("2024-05-01"),
+    createdAt: new Date("2024-04-25"),
     createdBy: "Michael Davis",
     teamMembers: ["Michael Davis", "Jennifer White", "Daniel Brown"],
     tasks: [
@@ -147,10 +147,10 @@ const initialProjects: Project[] = [
     status: "on-hold",
     priority: "low",
     progress: 10,
-    startDate: new Date("2024-06-15").toISOString(),
-    endDate: new Date("2024-08-30").toISOString(),
-    createdAt: new Date("2024-03-20").toISOString(),
-    updatedAt: new Date("2024-04-15").toISOString(),
+    startDate: new Date("2024-06-15"),
+    endDate: new Date("2024-08-30"),
+    createdAt: new Date("2024-03-20"),
+    updatedAt: new Date("2024-04-15"),
     createdBy: "Thomas Moore",
     teamMembers: ["Thomas Moore", "Rebecca Martinez"],
     tasks: [
@@ -181,10 +181,10 @@ const initialProjects: Project[] = [
     status: "completed",
     priority: "high",
     progress: 100,
-    startDate: new Date("2024-01-10").toISOString(),
-    endDate: new Date("2024-03-31").toISOString(),
-    createdAt: new Date("2024-01-05").toISOString(),
-    updatedAt: new Date("2024-03-31").toISOString(),
+    startDate: new Date("2024-01-10"),
+    endDate: new Date("2024-03-31"),
+    createdAt: new Date("2024-01-05"),
+    updatedAt: new Date("2024-03-31"),
     createdBy: "Catherine Lewis",
     teamMembers: ["Catherine Lewis", "Edward Green", "Olivia King"],
     tasks: [
@@ -283,8 +283,8 @@ export function useProjectsData() {
     const newProject: Project = {
       ...project,
       id: uuidv4(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       tasks: [],
       comments: [],
       progress: 0
@@ -298,7 +298,7 @@ export function useProjectsData() {
     setProjects(prevProjects => 
       prevProjects.map(project => 
         project.id === updatedProject.id 
-          ? { ...updatedProject, updatedAt: new Date().toISOString() } 
+          ? { ...updatedProject, updatedAt: new Date() } 
           : project
       )
     );

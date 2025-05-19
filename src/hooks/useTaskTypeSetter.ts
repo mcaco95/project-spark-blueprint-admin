@@ -47,14 +47,15 @@ export function ensureTasksHaveType(tasks: Partial<Task>[]): Task[] {
  * using the old model. This should be a temporary solution until all code is updated.
  */
 export function patchTaskModel() {
-  // Get the Task interface from the type system
+  // Get the original createElement function
   const originalCreateElement = React.createElement;
   
   // Override createElement to patch task objects before they're passed to components
   // Use proper TypeScript type definitions to avoid errors
-  const patchedCreateElement: typeof React.createElement = function(
-    type: React.ElementType, 
-    props: any | null, 
+  // @ts-ignore - We need to override React.createElement which TypeScript doesn't like
+  React.createElement = function(
+    type: React.ElementType,
+    props: any | null,
     ...children: React.ReactNode[]
   ): React.ReactElement {
     if (props && props.task && typeof props.task === 'object' && !props.task.taskType) {
@@ -66,7 +67,4 @@ export function patchTaskModel() {
     
     return originalCreateElement(type, props, ...children);
   };
-  
-  // Replace the original createElement with our patched version
-  React.createElement = patchedCreateElement;
 }
