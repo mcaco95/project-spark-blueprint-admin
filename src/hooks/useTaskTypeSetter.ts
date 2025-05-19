@@ -51,7 +51,12 @@ export function patchTaskModel() {
   const originalCreateElement = React.createElement;
   
   // Override createElement to patch task objects before they're passed to components
-  React.createElement = function(type: any, props: any, ...children: any[]) {
+  // Use proper TypeScript type definitions to avoid errors
+  const patchedCreateElement: typeof React.createElement = function(
+    type: React.ElementType, 
+    props: any | null, 
+    ...children: React.ReactNode[]
+  ): React.ReactElement {
     if (props && props.task && typeof props.task === 'object' && !props.task.taskType) {
       props = {
         ...props,
@@ -61,4 +66,7 @@ export function patchTaskModel() {
     
     return originalCreateElement(type, props, ...children);
   };
+  
+  // Replace the original createElement with our patched version
+  React.createElement = patchedCreateElement;
 }

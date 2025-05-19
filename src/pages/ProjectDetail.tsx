@@ -631,7 +631,8 @@ const ProjectDetail = () => {
           status: 'todo',
           assignees: [],
           projectId: project.id,
-          project: project.name
+          project: project.name,
+          taskType: 'meeting' // Add taskType property
         }}
         onSave={(task) => {
           addTask({...task, projectId: project.id});
