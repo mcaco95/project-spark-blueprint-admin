@@ -115,6 +115,9 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Determine taskType based on whether date and time are provided
+    const taskType = showTimeFields && date && time ? 'meeting' : 'task';
+    
     const taskData: Omit<Task, 'id'> = {
       title,
       description: description || undefined,
@@ -123,6 +126,7 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
       assignees,
       projectId,
       project: projectName,
+      taskType, // Add taskType field here
     };
 
     // Add date/time fields only if they have values

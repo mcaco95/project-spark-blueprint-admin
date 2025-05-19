@@ -158,6 +158,7 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
       comments: task?.comments || [],
       dependencies: data.dependencies,
       dependencyType: data.dependencyType,
+      taskType: 'meeting', // Add taskType field - meetings are created in this dialog
     };
 
     if (task) {

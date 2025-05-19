@@ -5,6 +5,7 @@ import { initialBoard, initialTasks } from './initialData';
 import * as taskSelectors from './taskSelectors';
 import * as taskActions from './taskActions';
 import { TaskContextType } from './types';
+import { ensureTaskType } from '@/hooks/useTaskTypeSetter';
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
@@ -69,16 +70,34 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const getAllTasks = () => taskSelectors.getAllTasks(tasks);
   const getKanbanTasks = () => taskSelectors.getKanbanTasks(tasks);
   const getTimelineTasks = () => taskSelectors.getTimelineTasks(tasks);
-  const getTaskById = (taskId: string) => taskSelectors.getTaskById(tasks, taskId);
-  const getTasksByProject = (projectId: string | null) => taskSelectors.getTasksByProject(tasks, projectId);
+  const getTaskById = (taskId: string) => {
+    const task = taskSelectors.getTaskById(tasks, taskId);
+    return task ? ensureTaskType(task) : undefined;
+  };
+  const getTasksByProject = (projectId: string | null) => {
+    const projectTasks = taskSelectors.getTasksByProject(tasks, projectId);
+    return projectTasks.map(task => ensureTaskType(task));
+  };
 
   // Action methods
   const addTask = (task: Omit<Task, 'id'> & { id?: string }) => {
-    return taskActions.addTask(task, tasks, setTasks, board, setBoard);
+    // Make sure task has taskType
+    const enhancedTask = {
+      ...task,
+      taskType: task.taskType || ((task.date && task.time) ? 'meeting' : 'task')
+    };
+    
+    return taskActions.addTask(enhancedTask, tasks, setTasks, board, setBoard);
   };
 
   const updateTask = (task: Task) => {
-    return taskActions.updateTask(task, tasks, setTasks, board, setBoard);
+    // Ensure task has taskType
+    const enhancedTask = {
+      ...task,
+      taskType: task.taskType || ((task.date && task.time) ? 'meeting' : 'task')
+    };
+    
+    return taskActions.updateTask(enhancedTask, tasks, setTasks, board, setBoard);
   };
 
   const deleteTask = (taskId: string) => {

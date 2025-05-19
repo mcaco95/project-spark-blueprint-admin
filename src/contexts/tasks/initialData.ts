@@ -43,7 +43,8 @@ export const initialTasks: Task[] = [
     projectId: '1',
     project: 'Website Redesign',
     assignees: ['Admin User'],
-    showInKanban: true
+    showInKanban: true,
+    taskType: 'task'
   },
   {
     id: 'task-2',
@@ -54,7 +55,8 @@ export const initialTasks: Task[] = [
     projectId: '1',
     project: 'Website Redesign',
     assignees: ['Regular User'],
-    showInKanban: true
+    showInKanban: true,
+    taskType: 'task'
   },
   {
     id: 'task-3',
@@ -65,7 +67,8 @@ export const initialTasks: Task[] = [
     projectId: '2',
     project: 'Mobile App Development',
     assignees: ['Admin User', 'Regular User'],
-    showInKanban: true
+    showInKanban: true,
+    taskType: 'task'
   },
   {
     id: 'task-4',
@@ -76,7 +79,8 @@ export const initialTasks: Task[] = [
     projectId: '2',
     project: 'Mobile App Development',
     assignees: ['Project Manager'],
-    showInKanban: true
+    showInKanban: true,
+    taskType: 'task'
   },
   // Timeline tasks
   {
@@ -91,6 +95,7 @@ export const initialTasks: Task[] = [
     description: 'Initial meeting to discuss project goals and timeline',
     status: 'completed',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: [
       { id: '1', author: 'Admin User', content: '@Regular User please prepare the requirements document', createdAt: new Date('2025-05-18') },
       { id: '2', author: 'Regular User', content: 'Will do. When do you need it by?', createdAt: new Date('2025-05-18') },
@@ -110,12 +115,13 @@ export const initialTasks: Task[] = [
     description: 'Review initial app designs and wireframes',
     status: 'completed',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: [
       { id: '1', author: 'Designer 1', content: "I've uploaded the latest mockups for review", createdAt: new Date('2025-05-20') },
       { id: '2', author: 'Project Manager', content: "Thanks! They look great. Let's discuss the navigation flow tomorrow.", createdAt: new Date('2025-05-20') }
     ]
   },
-  // ... remaining timeline tasks
+  // ... remaining timeline tasks with taskType added
   {
     id: 'timeline-3',
     title: 'Backend planning',
@@ -128,6 +134,7 @@ export const initialTasks: Task[] = [
     description: 'Plan API endpoints and database schema',
     status: 'in-progress',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: []
   },
   {
@@ -142,6 +149,7 @@ export const initialTasks: Task[] = [
     description: 'Implement UI components and integrate with backend',
     status: 'in-progress',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: []
   },
   {
@@ -156,6 +164,7 @@ export const initialTasks: Task[] = [
     description: 'Test API endpoints for data retrieval and storage',
     status: 'review',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: []
   },
   {
@@ -170,6 +179,7 @@ export const initialTasks: Task[] = [
     description: 'Review code for best practices and security vulnerabilities',
     status: 'review',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: []
   },
   {
@@ -184,6 +194,7 @@ export const initialTasks: Task[] = [
     description: 'Fix bugs reported during testing',
     status: 'in-progress',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: []
   },
   {
@@ -198,6 +209,7 @@ export const initialTasks: Task[] = [
     description: 'Optimize website performance for speed and scalability',
     status: 'review',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: []
   },
   {
@@ -212,6 +224,7 @@ export const initialTasks: Task[] = [
     description: 'Conduct user acceptance testing to ensure the app meets user requirements',
     status: 'done',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: []
   },
   {
@@ -226,6 +239,7 @@ export const initialTasks: Task[] = [
     description: 'Deploy the website to the production environment',
     status: 'completed',
     showInTimeline: true,
+    taskType: 'meeting',
     comments: []
   }
 ];
