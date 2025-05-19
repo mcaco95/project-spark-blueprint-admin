@@ -61,7 +61,7 @@ const reactionEmojis = ['👍', '👎', '❤️', '🎉', '👀', '🚀', '👏'
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProjectById, updateProject, deleteProject } = useProjectsData();
+  const { projects, getProjectById, updateProject, deleteProject } = useProjectsData();
   const { getTasksByProject, addTask } = useTaskContext();
   const [activeTab, setActiveTab] = useState('overview');
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
@@ -607,6 +607,7 @@ const ProjectDetail = () => {
         isOpen={isProjectDialogOpen}
         onClose={() => setIsProjectDialogOpen(false)}
         editingProject={project}
+        projects={projects}
         onSave={(updatedProject) => {
           updateProject(updatedProject);
           setIsProjectDialogOpen(false);

@@ -125,6 +125,7 @@ const Projects = () => {
           isOpen={isDialogOpen} 
           onClose={handleCloseDialog} 
           editingProject={editingProject} 
+          projects={projects}
           onSave={(project) => {
             if (editingProject) {
               updateProject(project);
