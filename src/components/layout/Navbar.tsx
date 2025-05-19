@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { 
   NavigationMenu,
@@ -24,7 +24,7 @@ import {
   FolderKanban, 
   Calendar, 
   FileText, 
-  Settings, 
+  Settings as SettingsIcon, 
   Users,
   LogOut,
   User,
@@ -32,7 +32,11 @@ import {
   Timer,
   Kanban,
   List,
-  GanttChart
+  GanttChart,
+  Bell,
+  Moon,
+  Sun,
+  Languages
 } from 'lucide-react';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { cn } from '@/lib/utils';
@@ -43,6 +47,7 @@ export const Navbar = () => {
   const { t } = useTranslation('common');
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -56,6 +61,10 @@ export const Navbar = () => {
       .join('')
       .toUpperCase()
       .substring(0, 2);
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
@@ -190,12 +199,69 @@ export const Navbar = () => {
               )}
 
               <NavigationMenuItem>
-                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                  <Link to="/settings" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span>{t('settings')}</span>
-                  </Link>
-                </NavigationMenuLink>
+                <NavigationMenuTrigger className={cn(
+                  "flex items-center gap-2",
+                  isActive("/settings") && "bg-accent text-accent-foreground"
+                )}>
+                  <SettingsIcon className="h-4 w-4" />
+                  <span>{t('settings')}</span>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[300px] gap-2 p-2 md:w-[400px] md:grid-cols-2">
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/settings?tab=profile" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="flex items-center">
+                            <User className="h-4 w-4 mr-2" />
+                            <div className="text-sm font-medium leading-none">{t('settings.profile', 'Profile')}</div>
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            {t('settings.manage_profile', 'Manage your personal information')}
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/settings?tab=appearance" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="flex items-center">
+                            <Sun className="h-4 w-4 mr-2" />
+                            <div className="text-sm font-medium leading-none">{t('settings.appearance', 'Appearance')}</div>
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            {t('settings.customize_theme', 'Customize the app appearance')}
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/settings?tab=notifications" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="flex items-center">
+                            <Bell className="h-4 w-4 mr-2" />
+                            <div className="text-sm font-medium leading-none">{t('settings.notifications', 'Notifications')}</div>
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            {t('settings.notification_preferences', 'Manage notification settings')}
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <Link to="/settings?tab=language" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div className="flex items-center">
+                            <Languages className="h-4 w-4 mr-2" />
+                            <div className="text-sm font-medium leading-none">{t('settings.language', 'Language')}</div>
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            {t('settings.language_preferences', 'Change language settings')}
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
