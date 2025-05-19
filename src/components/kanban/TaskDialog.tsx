@@ -28,6 +28,7 @@ import { X, Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface TaskDialogProps {
   isOpen: boolean;
@@ -200,6 +201,11 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
     setProjectName(project ? project.name : '');
   };
 
+  // Fix the calendar component's onSelect handling
+  const handleDateSelect = (date: Date | undefined) => {
+    setDueDate(date);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -334,10 +340,10 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
-                      <Calendar
+                      <CalendarComponent
                         mode="single"
                         selected={dueDate}
-                        onSelect={setDueDate}
+                        onSelect={handleDateSelect}
                         initialFocus
                         className="p-3 pointer-events-auto"
                       />

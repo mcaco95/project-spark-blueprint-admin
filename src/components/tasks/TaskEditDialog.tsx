@@ -428,7 +428,7 @@ export function TaskDialog({
                         <CalendarComponent
                           mode="single"
                           selected={field.value || undefined}
-                          onSelect={field.onChange}
+                          onSelect={(date) => field.onChange(date)}
                           initialFocus
                           className="p-3 pointer-events-auto"
                         />
