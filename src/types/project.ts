@@ -17,6 +17,7 @@ export interface Project {
   updatedAt?: Date;
   tasks?: Task[];
   comments?: ProjectComment[];
+  tags?: string[]; // Added tags field
   
   // Project hierarchy fields
   parentId?: string | null;

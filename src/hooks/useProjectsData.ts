@@ -1,9 +1,11 @@
+
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Project } from "@/types/project";
 import { Task } from "@/types/task";
-import { ensureTaskType } from "./useTaskTypeSetter";
+// Remove the import of ensureTaskType as we're already defining it locally
+// or alternatively, use the import and remove the local definition
 
 const initialProjects: Project[] = [
   {
@@ -45,7 +47,6 @@ const initialProjects: Project[] = [
         taskType: "task"
       }
     ],
-    tags: ["design", "development", "high-priority"],
     comments: []
   },
   {
@@ -79,7 +80,6 @@ const initialProjects: Project[] = [
         taskType: "task"
       }
     ],
-    tags: ["mobile", "development"],
     comments: []
   },
   {
@@ -113,7 +113,6 @@ const initialProjects: Project[] = [
         taskType: "task"
       }
     ],
-    tags: ["marketing", "high-priority"],
     comments: []
   },
   {
@@ -137,7 +136,6 @@ const initialProjects: Project[] = [
         taskType: "task"
       }
     ],
-    tags: ["strategy", "planning"],
     comments: []
   },
   {
@@ -171,7 +169,6 @@ const initialProjects: Project[] = [
         taskType: "task"
       }
     ],
-    tags: ["facilities", "renovation"],
     comments: []
   },
   {
@@ -205,7 +202,6 @@ const initialProjects: Project[] = [
         taskType: "task"
       }
     ],
-    tags: ["finance", "reporting"],
     comments: []
   }
 ];
@@ -258,8 +254,9 @@ export function patchTaskModel() {
   // Get the Task interface from the type system
   const originalCreateElement = React.createElement;
   
-  // Override createElement to patch task objects before they're passed to components
-  React.createElement = function(type: any, props: any, ...children: any[]) {
+  // Fix the type definition for the createElement override
+  // @ts-ignore - We need to override React.createElement which TypeScript doesn't like
+  React.createElement = function(type: React.ElementType, props: any, ...children: React.ReactNode[]) {
     if (props && props.task && typeof props.task === 'object' && !props.task.taskType) {
       props = {
         ...props,
