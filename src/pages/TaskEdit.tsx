@@ -53,7 +53,7 @@ const TaskEdit = () => {
 
   return (
     <MainLayout>
-      <div className="container max-w-3xl mx-auto">
+      <div className="container mx-auto py-6">
         <div className="flex items-center mb-6">
           <Button variant="outline" size="icon" className="mr-4" onClick={() => navigate(`/tasks/${id}`)}>
             <ArrowLeft className="h-4 w-4" />

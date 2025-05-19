@@ -25,6 +25,9 @@ import { useTaskContext } from '@/contexts/tasks/TaskContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { X, Calendar, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface TaskDialogProps {
   isOpen: boolean;
@@ -53,7 +56,7 @@ const availableUsers = [
 ];
 
 export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSave, initialDate }: TaskDialogProps) {
-  const { addTask, updateTask } = useTaskContext();
+  const { addTask, updateTask, getAllTasks } = useTaskContext();
   const navigate = useNavigate();
   
   const [title, setTitle] = React.useState('');
@@ -64,12 +67,20 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
   const [selectedAssignee, setSelectedAssignee] = React.useState<string>('');
   const [projectId, setProjectId] = React.useState<string>('');
   const [projectName, setProjectName] = React.useState<string>('');
+  const [taskType, setTaskType] = React.useState<'task' | 'meeting'>('task');
   
-  // Date and time fields are always available
+  // Date and time fields
+  const [dueDate, setDueDate] = React.useState<Date | undefined>(undefined);
   const [date, setDate] = React.useState<string>('');
   const [time, setTime] = React.useState<string>('');
   const [duration, setDuration] = React.useState<number>(30);
-  const [showTimeFields, setShowTimeFields] = React.useState<boolean>(false);
+
+  // Dependencies
+  const [dependencies, setDependencies] = React.useState<string[]>([]);
+  const [dependencyType, setDependencyType] = React.useState<string>('finish-to-start');
+  
+  // Get all tasks for dependencies
+  const allTasks = getAllTasks();
 
   // Reset form or populate with task data when opening
   useEffect(() => {
@@ -82,22 +93,34 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
         setAssignees(editingTask.assignees || []);
         setProjectId(editingTask.projectId || '1');
         setProjectName(editingTask.project || 'Website Redesign');
+        setTaskType(editingTask.taskType || 'task');
         
-        // Set date/time fields if available
+        // Set date fields if available
+        if (editingTask.dueDate) {
+          setDueDate(new Date(editingTask.dueDate));
+        }
+        
         setDate(editingTask.date || '');
         setTime(editingTask.time || '');
         setDuration(editingTask.duration || 30);
-        setShowTimeFields(!!(editingTask.date || editingTask.time));
+        
+        // Set dependencies
+        setDependencies(editingTask.dependencies || []);
+        setDependencyType(editingTask.dependencyType || 'finish-to-start');
       } else {
+        // Reset form for new task
         setTitle('');
         setDescription('');
         setStatus('todo');
         setPriority('medium');
         setAssignees([]);
-        setDate(initialDate ? initialDate.toISOString().split('T')[0] : '');
+        setTaskType('task');
+        setDueDate(undefined);
+        setDate(initialDate ? format(initialDate, 'yyyy-MM-dd') : '');
         setTime('');
         setDuration(30);
-        setShowTimeFields(!!initialDate);
+        setDependencies([]);
+        setDependencyType('finish-to-start');
         
         // Use defaultProject if provided
         if (defaultProject) {
@@ -110,14 +133,12 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
         }
       }
     }
-  }, [isOpen, editingTask, defaultProject, initialDate]);
+  }, [isOpen, editingTask, defaultProject, initialDate, getAllTasks]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Determine taskType based on whether date and time are provided
-    const taskType = showTimeFields && date && time ? 'meeting' : 'task';
-    
+    // Prepare task data based on task type
     const taskData: Omit<Task, 'id'> = {
       title,
       description: description || undefined,
@@ -126,19 +147,18 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
       assignees,
       projectId,
       project: projectName,
-      taskType, // Add taskType field here
+      taskType,
+      dependencies,
+      dependencyType: dependencyType as any,
     };
 
-    // Add date/time fields only if they have values
-    if (date) {
+    // Add specific fields based on task type
+    if (taskType === 'task') {
+      taskData.dueDate = dueDate;
+    } else {
+      // It's a meeting
       taskData.date = date;
-    }
-    
-    if (time) {
       taskData.time = time;
-    }
-    
-    if (date && time && duration) {
       taskData.duration = duration;
     }
     
@@ -180,17 +200,9 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
     setProjectName(project ? project.name : '');
   };
 
-  const toggleTimeFields = () => {
-    setShowTimeFields(!showTimeFields);
-    if (!showTimeFields && !date) {
-      const today = new Date();
-      setDate(today.toISOString().split('T')[0]);
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{editingTask ? 'Edit Task' : 'Create New Task'}</DialogTitle>
@@ -203,6 +215,24 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
+            {/* Task Type */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="taskType" className="text-right">Task Type</Label>
+              <Select
+                value={taskType}
+                onValueChange={(value: 'task' | 'meeting') => setTaskType(value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select task type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="task">Regular Task</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Title */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="title" className="text-right">Title</Label>
               <Input
@@ -211,9 +241,11 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                 onChange={(e) => setTitle(e.target.value)}
                 className="col-span-3"
                 required
+                placeholder="Enter task title"
               />
             </div>
             
+            {/* Description */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">Description</Label>
               <Textarea
@@ -222,9 +254,11 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                 onChange={(e) => setDescription(e.target.value)}
                 className="col-span-3"
                 rows={3}
+                placeholder="Define task scope and details"
               />
             </div>
             
+            {/* Project */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="project" className="text-right">Project</Label>
               <Select 
@@ -244,6 +278,7 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
               </Select>
             </div>
             
+            {/* Status */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="status" className="text-right">Status</Label>
               <Select 
@@ -262,6 +297,7 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
               </Select>
             </div>
             
+            {/* Priority */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="priority" className="text-right">Priority</Label>
               <Select 
@@ -279,24 +315,39 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
               </Select>
             </div>
             
-            {/* Date and Time Fields */}
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label className="text-right pt-2">Scheduling</Label>
-              <div className="col-span-3">
-                <Button
-                  type="button"
-                  variant={showTimeFields ? "default" : "outline"}
-                  onClick={toggleTimeFields}
-                  size="sm"
-                >
-                  {showTimeFields ? "Hide Schedule Options" : "Schedule This Task"}
-                </Button>
+            {/* Date fields based on task type */}
+            {taskType === 'task' ? (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="dueDate" className="text-right">Due Date</Label>
+                <div className="col-span-3">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dueDate && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {dueDate ? format(dueDate, 'PPP') : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={dueDate}
+                        onSelect={setDueDate}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
-            </div>
-            
-            {/* Show date/time fields conditionally */}
-            {showTimeFields && (
+            ) : (
               <>
+                {/* Meeting fields */}
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="date" className="text-right">Date</Label>
                   <div className="col-span-3 flex items-center">
@@ -340,6 +391,7 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
               </>
             )}
             
+            {/* Assignees */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="assignees" className="text-right">Assignees</Label>
               <div className="col-span-3 space-y-2">
@@ -378,6 +430,7 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                         size="sm" 
                         className="h-4 w-4 p-0 rounded-full"
                         onClick={() => handleRemoveAssignee(assignee)}
+                        type="button"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -386,6 +439,87 @@ export function TaskDialog({ isOpen, onClose, editingTask, defaultProject, onSav
                 </div>
               </div>
             </div>
+            
+            {/* Dependencies */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="dependencies" className="text-right">Dependencies</Label>
+              <Select
+                value={dependencies.length > 0 ? "has-dependencies" : "no-dependencies"}
+                onValueChange={(value) => {
+                  if (value === "no-dependencies") {
+                    setDependencies([]);
+                  }
+                }}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Dependencies">
+                    {dependencies.length === 0 ? "No dependencies" : `${dependencies.length} dependencies`}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no-dependencies">No dependencies</SelectItem>
+                  {allTasks.map(task => (
+                    <SelectItem 
+                      key={task.id} 
+                      value={task.id}
+                      onClick={() => {
+                        if (task.id !== editingTask?.id && !dependencies.includes(task.id)) {
+                          setDependencies([...dependencies, task.id]);
+                        }
+                      }}
+                    >
+                      {task.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {dependencies.length > 0 && (
+              <>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <div className="col-start-2 col-span-3">
+                    <div className="flex flex-wrap gap-1">
+                      {dependencies.map((depId) => {
+                        const task = allTasks.find(t => t.id === depId);
+                        return task ? (
+                          <Badge key={depId} variant="outline" className="flex items-center gap-1">
+                            {task.title}
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-4 w-4 p-0 rounded-full"
+                              onClick={() => setDependencies(dependencies.filter(id => id !== depId))}
+                              type="button"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="dependencyType" className="text-right">Dependency Type</Label>
+                  <Select 
+                    value={dependencyType} 
+                    onValueChange={setDependencyType}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select dependency type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="finish-to-start">Finish to Start (FS)</SelectItem>
+                      <SelectItem value="start-to-start">Start to Start (SS)</SelectItem>
+                      <SelectItem value="finish-to-finish">Finish to Finish (FF)</SelectItem>
+                      <SelectItem value="start-to-finish">Start to Finish (SF)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
           
           <DialogFooter>

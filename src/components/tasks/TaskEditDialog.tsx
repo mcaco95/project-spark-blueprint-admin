@@ -244,7 +244,7 @@ export function TaskDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose} modal={!standalone}>
-      <DialogContent className={cn("sm:max-w-[550px]", standalone ? "p-0 border-0 shadow-none max-w-none" : "")}>
+      <DialogContent className={cn("sm:max-w-[600px] max-h-[90vh] overflow-y-auto", standalone ? "p-6 border max-w-3xl mx-auto" : "")}>
         <DialogHeader>
           <DialogTitle>{editingTask ? 'Edit Task' : 'Create New Task'}</DialogTitle>
         </DialogHeader>
@@ -301,7 +301,7 @@ export function TaskDialog({
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Enter task description" 
+                      placeholder="Define task scope and details" 
                       {...field} 
                       rows={3}
                     />
@@ -430,6 +430,7 @@ export function TaskDialog({
                           selected={field.value || undefined}
                           onSelect={field.onChange}
                           initialFocus
+                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
