@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +9,7 @@ import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { Task } from '@/types/task';
 import { useTranslation } from 'react-i18next';
 import { useTaskContext } from '@/contexts/tasks/TaskContext';
+import { TaskDependencySelect } from '@/components/tasks/TaskDependencySelect';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -70,6 +72,8 @@ const availableUsers = [
 
 // Define the recurrence type
 type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | null;
+// Define dependency type
+type DependencyType = 'finish-to-start' | 'start-to-start' | 'finish-to-finish' | 'start-to-finish' | null;
 
 const TaskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -80,14 +84,19 @@ const TaskFormSchema = z.object({
   assignees: z.array(z.string()).min(1, 'At least one assignee is required'),
   description: z.string().optional(),
   recurrence: z.union([z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']), z.null()]).optional(),
+  dependencies: z.array(z.string()).optional(),
+  dependencyType: z.enum(['finish-to-start', 'start-to-start', 'finish-to-finish', 'start-to-finish']).optional(),
 });
 
 type TaskFormValues = z.infer<typeof TaskFormSchema>;
 
 export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDialogProps) {
   const { t } = useTranslation(['common', 'tasks']);
-  const { updateTask, addTask } = useTaskContext();
+  const { updateTask, addTask, getAllTasks } = useTaskContext();
   const navigate = useNavigate();
+
+  // Get all tasks for dependencies
+  const allTasks = getAllTasks();
 
   const defaultValues: TaskFormValues = {
     title: '',
@@ -98,6 +107,8 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
     assignees: [],
     description: '',
     recurrence: null,
+    dependencies: [],
+    dependencyType: 'finish-to-start',
   };
 
   const form = useForm<TaskFormValues>({
@@ -121,6 +132,8 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
         assignees: task.assignees || [],
         description: task.description || '',
         recurrence: task.recurrence as RecurrenceType || null,
+        dependencies: task.dependencies || [],
+        dependencyType: task.dependencyType || 'finish-to-start',
       });
     } else {
       form.reset(defaultValues);
@@ -143,6 +156,8 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
       recurrence: data.recurrence || undefined,
       status: task?.status || 'todo',
       comments: task?.comments || [],
+      dependencies: data.dependencies,
+      dependencyType: data.dependencyType,
     };
 
     if (task) {
@@ -349,6 +364,38 @@ export function TaskEventDialog({ isOpen, onClose, onSave, task }: TaskEventDial
                   <FormControl>
                     <Textarea rows={3} {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Task Dependencies Section */}
+            <TaskDependencySelect 
+              tasks={allTasks}
+              currentTaskId={task?.id}
+              control={form.control}
+              name="dependencies"
+            />
+
+            <FormField
+              control={form.control}
+              name="dependencyType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dependency Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select dependency type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="finish-to-start">Finish to Start (FS)</SelectItem>
+                      <SelectItem value="start-to-start">Start to Start (SS)</SelectItem>
+                      <SelectItem value="finish-to-finish">Finish to Finish (FF)</SelectItem>
+                      <SelectItem value="start-to-finish">Start to Finish (SF)</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

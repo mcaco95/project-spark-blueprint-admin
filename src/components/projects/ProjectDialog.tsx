@@ -32,12 +32,14 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { v4 as uuidv4 } from 'uuid';
+import { ProjectHierarchySelect } from './ProjectHierarchySelect';
 
 interface ProjectDialogProps {
   isOpen: boolean;
   onClose: () => void;
   editingProject: Project | null;
   onSave: (project: Project) => void;
+  projects: Project[];
 }
 
 // Sample team members data
@@ -61,11 +63,12 @@ const ProjectFormSchema = z.object({
   endDate: z.date().optional(),
   progress: z.number().min(0).max(100),
   teamMembers: z.array(z.string()),
+  parentId: z.string().nullable(),
 });
 
 type ProjectFormValues = z.infer<typeof ProjectFormSchema>;
 
-export function ProjectDialog({ isOpen, onClose, editingProject, onSave }: ProjectDialogProps) {
+export function ProjectDialog({ isOpen, onClose, editingProject, onSave, projects }: ProjectDialogProps) {
   const { t } = useTranslation(['common', 'projects']);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
@@ -77,6 +80,7 @@ export function ProjectDialog({ isOpen, onClose, editingProject, onSave }: Proje
     startDate: new Date(),
     progress: 0,
     teamMembers: [],
+    parentId: null,
   };
 
   const form = useForm<ProjectFormValues>({
@@ -95,6 +99,7 @@ export function ProjectDialog({ isOpen, onClose, editingProject, onSave }: Proje
         endDate: editingProject.endDate,
         progress: editingProject.progress,
         teamMembers: editingProject.teamMembers,
+        parentId: editingProject.parentId || null,
       });
       setSelectedMembers(editingProject.teamMembers);
     } else {
@@ -119,6 +124,8 @@ export function ProjectDialog({ isOpen, onClose, editingProject, onSave }: Proje
       createdAt: editingProject?.createdAt || new Date(),
       tasks: editingProject?.tasks || [],
       comments: editingProject?.comments || [],
+      parentId: data.parentId,
+      // Path and level will be calculated by the useProjectsData hook
     };
     
     onSave(projectToSave);
@@ -312,6 +319,14 @@ export function ProjectDialog({ isOpen, onClose, editingProject, onSave }: Proje
                 )}
               />
             </div>
+
+            {/* Parent Project Selection */}
+            <ProjectHierarchySelect 
+              projects={projects}
+              currentProjectId={editingProject?.id}
+              control={form.control}
+              name="parentId"
+            />
 
             <FormField
               control={form.control}

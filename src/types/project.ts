@@ -17,6 +17,12 @@ export interface Project {
   updatedAt?: Date;
   tasks?: Task[];
   comments?: ProjectComment[];
+  
+  // Project hierarchy fields
+  parentId?: string | null;
+  path?: string; // Represents the full path in hierarchy (e.g., "1/2/3")
+  level?: number; // Hierarchy level (0 for root projects)
+  subProjects?: string[]; // IDs of child projects
 }
 
 export interface ProjectComment {

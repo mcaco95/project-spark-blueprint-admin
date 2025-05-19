@@ -40,6 +40,11 @@ export interface Task {
   comments?: TaskComment[];
   color?: string; // Support for custom task colors
   
+  // Dependency management
+  dependencies?: string[]; // IDs of tasks that this task depends on
+  dependents?: string[];   // IDs of tasks that depend on this task
+  dependencyType?: 'finish-to-start' | 'start-to-start' | 'finish-to-finish' | 'start-to-finish';
+  
   // Temporary properties to support transition
   showInKanban?: boolean;
   showInTimeline?: boolean;
