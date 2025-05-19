@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -66,6 +65,11 @@ const TaskDetail = () => {
         // Initialize comments array if it doesn't exist
         if (!foundTask.comments) {
           foundTask.comments = [];
+        }
+        // Initialize taskType if it doesn't exist
+        if (!foundTask.taskType) {
+          // Determine task type based on whether it has date/time or dueDate
+          foundTask.taskType = (foundTask.date && foundTask.time) ? 'meeting' : 'task';
         }
         setTask(foundTask);
       } else {
@@ -177,6 +181,10 @@ const TaskDetail = () => {
     setShowReactionPicker(null);
   };
   
+  const handleEditTask = () => {
+    navigate(`/tasks/edit/${id}`);
+  };
+  
   const formatMentions = (text: string) => {
     return text.replace(/@(\w+)/g, '<span class="text-blue-500 font-medium">@$1</span>');
   };
@@ -196,7 +204,7 @@ const TaskDetail = () => {
   };
 
   const isScheduledTask = (task?: Task): boolean => {
-    return !!(task?.date && task?.time);
+    return task?.taskType === 'meeting' || !!(task?.date && task?.time);
   };
 
   if (isLoading) {
@@ -242,7 +250,7 @@ const TaskDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate(`/tasks/edit/${task.id}`)}>
+            <Button variant="outline" onClick={handleEditTask}>
               <Edit className="h-4 w-4 mr-2" />
               Edit Task
             </Button>

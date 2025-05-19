@@ -10,7 +10,13 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const [board, setBoard] = useState<Board>(initialBoard);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    // Add the taskType field to each task if it doesn't exist
+    return initialTasks.map(task => ({
+      ...task,
+      taskType: task.taskType || ((task.date && task.time) ? 'meeting' : 'task')
+    }));
+  });
 
   // Initialize board with tasks that should be in Kanban on first load
   useEffect(() => {

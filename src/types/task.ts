@@ -24,12 +24,15 @@ export interface Task {
   description?: string;
   status: 'todo' | 'in-progress' | 'review' | 'done' | 'completed';
   priority?: 'low' | 'medium' | 'high';
-  dueDate?: Date;
+  dueDate?: Date; // Still optional but will be required for regular tasks in UI
   projectId?: string | null;
   project?: string;
   assignees: string[];
   
-  // Date and time properties (optional)
+  // Task type to differentiate between regular tasks and meetings
+  taskType: 'task' | 'meeting';
+  
+  // Date and time properties (required for meetings)
   startDate?: Date | string;
   endDate?: Date | string;
   duration?: number;

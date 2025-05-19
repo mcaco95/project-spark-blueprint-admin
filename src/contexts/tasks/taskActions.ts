@@ -12,18 +12,21 @@ export const addTask = (
 ) => {
   const newTaskId = task.id || `task-${uuidv4()}`;
   
-  // Determine which view(s) the task should appear in
-  const showInTimeline = task.showInTimeline || (task.date && task.time) ? true : task.showInTimeline;
-  const showInKanban = task.showInKanban !== undefined 
-    ? task.showInKanban 
-    : (!task.date && !task.time) || task.showInKanban;
+  // Use taskType if provided, otherwise determine based on existing fields
+  const taskType = task.taskType || ((task.date && task.time) ? 'meeting' : 'task');
+  
+  // Determine which view(s) the task should appear in based on taskType
+  const showInTimeline = task.showInTimeline !== undefined ? task.showInTimeline : (taskType === 'meeting');
+  const showInKanban = task.showInKanban !== undefined ? task.showInKanban : (taskType === 'task');
   
   const newTask: Task = {
     ...task,
     id: newTaskId,
     projectId: task.projectId || null,
+    taskType,
     showInTimeline,
-    showInKanban
+    showInKanban,
+    assignees: task.assignees || []
   };
 
   // Add to unified task collection

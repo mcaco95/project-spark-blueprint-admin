@@ -10,6 +10,7 @@ import Projects from '@/pages/Projects';
 import ProjectDetail from '@/pages/ProjectDetail';
 import Tasks from '@/pages/Tasks';
 import TaskDetail from '@/pages/TaskDetail';
+import TaskEdit from '@/pages/TaskEdit';
 import TaskKanban from '@/pages/TaskKanban';
 import TaskTimeline from '@/pages/TaskTimeline';
 import FileManager from '@/pages/FileManager';
@@ -49,6 +50,7 @@ function App() {
                     <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
                     <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
                     <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetail /></ProtectedRoute>} />
+                    <Route path="/tasks/edit/:id" element={<ProtectedRoute><TaskEdit /></ProtectedRoute>} />
                     <Route path="/kanban" element={<ProtectedRoute><TaskKanban /></ProtectedRoute>} />
                     <Route path="/timeline" element={<ProtectedRoute><TaskTimeline /></ProtectedRoute>} />
                     <Route path="/files" element={<ProtectedRoute><FileManager /></ProtectedRoute>} />
