@@ -11,6 +11,7 @@ from core.db import db # Changed back from relative import
 
 class Comment(db.Model): # Changed: Inherit from db.Model
     __tablename__ = "comments"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     text_content = Column(Text, nullable=False)

@@ -77,6 +77,7 @@ class UserRole(db.Model):
 
 class UserActivity(db.Model):
     __tablename__ = "user_activities"
+    __table_args__ = {'extend_existing': True}  # Add this line
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
