@@ -16,3 +16,4 @@ Flask-CORS>=3.0.0 # For Cross-Origin Resource Sharing
 python-jose>=3.3.0 # For JWT operations (creating, signing, verifying)
 email-validator>=2.0.0 # For Pydantic email validation
 bcrypt==4.0.1 # For passlib bcrypt backend 
+gunicorn>=20.1.0 # For production server 

@@ -1,12 +1,14 @@
 from pydantic_settings import BaseSettings
 from pydantic import PostgresDsn, validator, Field
 from typing import Optional, Dict, Any
+import os
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Project Management Backend"
     API_V1_STR: str = "/v1"
 
     # Database
+    DATABASE_URL: Optional[str] = None
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "password"
@@ -17,6 +19,10 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Optional[str]:
         if isinstance(v, str):
             return v
+        # First check for DATABASE_URL
+        if values.get("DATABASE_URL"):
+            return values.get("DATABASE_URL")
+        # Fall back to individual components if DATABASE_URL is not set
         if values.get("POSTGRES_USER") and values.get("POSTGRES_PASSWORD") and values.get("POSTGRES_SERVER") and values.get("POSTGRES_DB"):
             dsn = PostgresDsn.build(
                 scheme="postgresql",

@@ -68,7 +68,7 @@ def create_app(config_object=settings):
     # Enable CORS for all origins with proper preflight handling
     CORS(app, resources={
         r"/*": {
-            "origins": ["http://localhost:8080", "http://localhost:5000"],  # Add both frontend URLs
+            "origins": settings.BACKEND_CORS_ORIGINS.split(",") if isinstance(settings.BACKEND_CORS_ORIGINS, str) else ["http://localhost:8080"],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True
