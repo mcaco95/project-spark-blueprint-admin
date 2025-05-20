@@ -1,4 +1,5 @@
 import os
+import sys # Added sys import
 # import sys # Remove sys import
 # from pathlib import Path # Remove Path import
 
@@ -14,7 +15,7 @@ import os
 
 from flask_migrate import Migrate, init, migrate, upgrade
 from app import create_app
-from core.config import settings
+from core.config import Settings # Import the class itself
 from core.db import db
 
 # Import all models to ensure they're registered with SQLAlchemy
@@ -27,7 +28,9 @@ def init_database():
     """Initialize the database and run migrations"""
     try:
         print("Creating Flask app...")
-        app = create_app(settings)
+        # Re-initialize settings to ensure Render env vars are picked up
+        current_settings = Settings()
+        app = create_app(current_settings) # Use the re-initialized settings
         
         print("Initializing SQLAlchemy...")
         
