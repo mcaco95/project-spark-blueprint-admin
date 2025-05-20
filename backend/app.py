@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta, datetime
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_restx import Api
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -51,7 +51,15 @@ api = Api(
 
 def create_app(config_object=settings):
     app = Flask(__name__)
-    app.config.from_object(config_object)
+    
+    # Ensure database URL is set
+    if not config_object.SQLALCHEMY_DATABASE_URI:
+        raise ValueError("Database URL is not configured. Please set DATABASE_URL environment variable.")
+    
+    # Configure SQLAlchemy
+    app.config["SQLALCHEMY_DATABASE_URI"] = config_object.SQLALCHEMY_DATABASE_URI
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    
     # Set custom JSON encoder
     app.json_encoder = CustomJSONEncoder
     # Propagate JWT_SECRET_KEY to Flask config for Flask-JWT-Extended
@@ -60,7 +68,6 @@ def create_app(config_object=settings):
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=int(settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES))
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=int(settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS))
 
-
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
@@ -68,12 +75,24 @@ def create_app(config_object=settings):
     # Enable CORS for all origins with proper preflight handling
     CORS(app, resources={
         r"/*": {
-            "origins": settings.BACKEND_CORS_ORIGINS.split(",") if isinstance(settings.BACKEND_CORS_ORIGINS, str) else ["http://localhost:8080"],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": True
+            "origins": settings.BACKEND_CORS_ORIGINS.split(",") if isinstance(settings.BACKEND_CORS_ORIGINS, str) else ["*"],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+            "expose_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True,
+            "send_wildcard": False
         }
     })
+
+    # Add CORS headers to all responses
+    @app.after_request
+    def after_request(response):
+        if request.method == 'OPTIONS':
+            response.headers["Access-Control-Allow-Origin"] = settings.BACKEND_CORS_ORIGINS
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
 
     # Initialize Flask-RESTX Api with the Flask app
     api.init_app(app)
