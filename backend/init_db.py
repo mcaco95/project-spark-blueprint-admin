@@ -1,16 +1,16 @@
 import os
-import sys
-from pathlib import Path
+# import sys # Remove sys import
+# from pathlib import Path # Remove Path import
 
-# Get the absolute path to the backend directory
-backend_dir = Path(__file__).parent.absolute()
-project_root = backend_dir.parent
+# # Get the absolute path to the backend directory
+# backend_dir = Path(__file__).parent.absolute()
+# project_root = backend_dir.parent
 
-# Add both backend and project root to Python path
-if str(backend_dir) not in sys.path:
-    sys.path.insert(0, str(backend_dir))
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+# # Add both backend and project root to Python path
+# if str(backend_dir) not in sys.path:
+#     sys.path.insert(0, str(backend_dir))
+# if str(project_root) not in sys.path:
+#     sys.path.insert(0, str(project_root))
 
 from flask_migrate import Migrate, init, migrate, upgrade
 from app import create_app
@@ -46,7 +46,7 @@ def init_database():
                 raise
             
             # Check if migrations directory exists
-            if not os.path.exists(os.path.join(backend_dir, 'migrations')):
+            if not os.path.exists('migrations'):
                 print("Initializing migrations directory...")
                 init()
             

@@ -10,15 +10,15 @@ from werkzeug.local import LocalProxy
 import json
 
 # from flask_sqlalchemy import SQLAlchemy # Removed
-from backend.core.db import db # Added
-from backend.core.config import settings
-from backend.services.auth.routes import auth_ns, admin_users_ns, admin_roles_ns # Import the auth, admin_users, and admin_roles namespaces
-from backend.services.projects.routes import projects_ns # Import the projects namespace
-from backend.services.tasks.routes import tasks_ns # Import the tasks namespace
-from backend.services.comments.routes import comments_ns # Import the comments namespace
-from backend.services.settings.routes import admin_settings_ns # Import the admin_settings namespace
-from backend.services.admin.routes import admin_projects_ns, admin_tasks_ns, admin_analytics_ns # Import admin namespaces
-from backend.services.auth.models import User # Added: Import User model
+from core.db import db # Changed
+from core.config import settings # Changed
+from services.auth.routes import auth_ns, admin_users_ns, admin_roles_ns # Changed
+from services.projects.routes import projects_ns # Changed
+from services.tasks.routes import tasks_ns # Changed
+from services.comments.routes import comments_ns # Changed
+from services.settings.routes import admin_settings_ns # Changed
+from services.admin.routes import admin_projects_ns, admin_tasks_ns, admin_analytics_ns # Changed
+from services.auth.models import User # Changed
 # from .services.projects.routes import projects_bp # Example for future
 
 # Custom JSON encoder to handle datetime objects
