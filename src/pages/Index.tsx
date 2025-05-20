@@ -178,7 +178,7 @@ const IndexContent = () => {
       .filter(project => project.status === 'active')
       .sort((a, b) => a.name.localeCompare(b.name)) // Sort by name
       .slice(0, 3); // Take top 3
-
+    
     return {
       pendingTasksCount: pendingTasks.length,
       highPriorityTasksCount: highPriorityPendingTasksCount, // ensure this uses the new variable name
@@ -464,7 +464,7 @@ const IndexContent = () => {
           )}
         </div>
       </div>
-
+      
       <div className="bg-card rounded-lg border p-6">
         <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
         <div className="space-y-4">

@@ -92,8 +92,8 @@ def create_user(user_in: schemas.RegisterRequest) -> User:
 # More service functions (get_user_by_id, update_user, etc.) can be added here.
 
 def get_all_users():
-    """Return all active users in the system."""
-    return User.query.filter_by(status='active').order_by(User.name.asc()).all()
+    """Return all users in the system."""
+    return User.query.all()
 
 # Define a simple pagination object for return type clarity
 class PagedUserResponse:
