@@ -5,8 +5,7 @@ from datetime import datetime
 from sqlalchemy import Column, String, Text, Date, DateTime, Enum as DBEnum, ForeignKey, Table, func, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from backend.core.db import db
-from backend.services.auth.models import User
+from ...core.db import db  # Changed to relative importfrom ..auth.models import User  # Changed to relative import
 # Import Task model
 # from backend.services.tasks.models import Task # This will cause circular dependency if Task imports Project too early.
                                                # Relationships can be defined using strings for model names.

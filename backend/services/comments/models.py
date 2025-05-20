@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
 
-from core.db import db # Changed to relative import
+from ...core.db import db  # Changed to relative import
 # from backend.services.auth.models import User # User is not directly used here, relationship uses string
 # from backend.services.projects.models import Project # Project is not directly used here, relationship uses string
 # from backend.services.tasks.models import Task # Task is not directly used here, relationship uses string

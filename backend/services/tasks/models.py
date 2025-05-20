@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Enum as DBEnu
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
-from core.db import db # Changed to relative import
+from ...core.db import db  # Changed to relative import
 
 # Association table for Task Assignees (Many-to-Many relationship between Tasks and Users)
 task_assignees_table = Table(

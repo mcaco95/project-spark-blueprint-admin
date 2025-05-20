@@ -2,8 +2,8 @@ import uuid
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, Enum as DBEnum, ARRAY, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from ...core.db import db  # Changed to relative import
 # from app import db # Corrected to import from core.db
-from backend.core.db import db # Import db from core.db
 # Import Task model and task_assignees_table for relationships
 # It's better to use string references for related models if they are in different files
 # to avoid circular imports during initialization.
@@ -11,6 +11,7 @@ from backend.core.db import db # Import db from core.db
 
 class User(db.Model):
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}  # Add this line to handle multiple registrations
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
