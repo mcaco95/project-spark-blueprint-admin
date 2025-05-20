@@ -3,10 +3,10 @@ from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from http import HTTPStatus
 
-from backend.services.auth.routes import admin_required, error_response_model
-from backend.services.projects import service as project_service
-from backend.services.tasks import service as task_service
-from backend.services.auth import service as auth_service
+from services.auth.routes import admin_required, error_response_model
+from services.projects import service as project_service
+from services.tasks import service as task_service
+from services.auth import service as auth_service
 
 # Define the namespace for admin metrics
 admin_projects_ns = Namespace('admin/projects', description='Admin Project Management operations')

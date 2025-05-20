@@ -5,10 +5,10 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from http import HTTPStatus
 import uuid # For UUID type hint and conversion
 
-from backend.services.auth.schemas import UserPublic
-from backend.services.projects import service
-from backend.services.projects import schemas
-from backend.common.utils import pydantic_to_restx_marshallable # Added import
+from services.auth.schemas import UserPublic
+from . import service
+from . import schemas
+from common.utils import pydantic_to_restx_marshallable # Changed
 
 # Define the namespace for projects
 projects_ns = Namespace('projects', description='Project management operations')

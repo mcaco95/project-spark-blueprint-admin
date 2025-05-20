@@ -5,13 +5,13 @@ from uuid import UUID
 from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 
-from backend.services.tasks.models import Task, task_assignees_table, task_dependencies_table
-from backend.services.tasks.schemas import TaskCreate, TaskUpdate, TaskStatusEnum, DependencyTypeEnum
-from backend.services.auth.models import User # For fetching assignees
-from backend.services.projects.models import Project, project_members_table # For validating project existence
-from backend.core.db import db # Assuming db.session is the synchronous session
-from backend.core.pagination import PaginatedResponse
-from backend.services.projects.service import get_projects_for_user
+from .models import Task, task_assignees_table, task_dependencies_table
+from .schemas import TaskCreate, TaskUpdate, TaskStatusEnum, DependencyTypeEnum
+from services.auth.models import User # For fetching assignees
+from services.projects.models import Project, project_members_table # For validating project existence
+from core.db import db # Assuming db.session is the synchronous session
+from core.pagination import PaginatedResponse
+from services.projects.service import get_projects_for_user
 
 def create_task(
     task_create_data: TaskCreate, 

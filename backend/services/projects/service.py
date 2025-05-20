@@ -5,11 +5,11 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import select, func, and_, desc, asc, delete as sqlalchemy_delete
 from datetime import datetime
 
-from backend.core.db import db
-from backend.services.auth.models import User
-from backend.services.projects import schemas
-from backend.services.projects.models import Project, project_members_table
-from backend.core.pagination import PaginatedResponse
+from core.db import db
+from services.auth.models import User
+from . import schemas
+from .models import Project, project_members_table
+from core.pagination import PaginatedResponse
 
 # --- Project Services ---
 

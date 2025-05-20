@@ -6,13 +6,13 @@ import uuid
 from typing import List
 from datetime import datetime
 
-from backend.services.tasks import service as task_service
-from backend.services.tasks import schemas as task_schemas
-from backend.services.auth.schemas import UserPublic # For marshalling user details
-from backend.services.projects.schemas import ProjectSimpleOutput # For marshalling project details
-from backend.common.utils import pydantic_to_restx_marshallable # Added import
+from . import service as task_service
+from . import schemas as task_schemas
+from services.auth.schemas import UserPublic
+from services.projects.schemas import ProjectSimpleOutput
+from common.utils import pydantic_to_restx_marshallable
 # Assuming UserSimplePublic is defined in auth.schemas and can be imported if needed for shared models
-# from backend.services.auth.schemas import UserPublic # For typing current_user
+# from services.auth.schemas import UserPublic # For typing current_user
 
 # Define the namespace for tasks
 tasks_ns = Namespace('tasks', description='Task related operations')

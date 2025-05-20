@@ -2,9 +2,9 @@ import logging
 from flask import request
 from flask_restx import Namespace, Resource, fields
 
-from backend.services.settings import service as settings_service
-from backend.services.settings import schemas as settings_schemas
-from backend.services.auth.routes import admin_required, error_response_model # Reusing from auth routes
+from . import service as settings_service
+from . import schemas as settings_schemas
+from services.auth.routes import admin_required, error_response_model
 
 logger = logging.getLogger(__name__)
 

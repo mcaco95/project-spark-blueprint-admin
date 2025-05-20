@@ -4,7 +4,7 @@ from flask_jwt_extended import jwt_required, current_user
 from http import HTTPStatus
 from uuid import UUID
 
-from backend.core.db import db # Assuming db session is managed here
+from core.db import db # Changed
 from .service import (
     create_comment,
     get_comments_for_project,
@@ -14,8 +14,8 @@ from .service import (
     get_comment_by_id
 )
 from .schemas import CommentCreate, CommentUpdate, CommentOutputPublic as CommentOutputSchema # Pydantic schema
-from backend.services.auth.schemas import UserPublic 
-from backend.common.utils import pydantic_to_restx_marshallable # Corrected import path
+from services.auth.schemas import UserPublic # Changed
+from common.utils import pydantic_to_restx_marshallable # Changed
 
 comments_ns = Namespace("comments", description="Comment operations for projects and tasks")
 

@@ -6,8 +6,8 @@ import logging
 
 from .models import Comment
 from .schemas import CommentCreate, CommentUpdate
-from backend.services.projects.models import Project # For permission checks
-from backend.services.tasks.models import Task # For permission checks
+from services.projects.models import Project # Changed
+from services.tasks.models import Task # Changed
 
 logger = logging.getLogger(__name__)
 

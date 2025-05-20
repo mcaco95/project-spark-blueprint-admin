@@ -8,11 +8,11 @@ from flask_jwt_extended import (
 from werkzeug.exceptions import BadRequest, Unauthorized, Conflict, NotFound
 from datetime import datetime
 
-from backend.services.auth import service as auth_service # Corrected
-from backend.services.auth import schemas as auth_schemas # Corrected
-from backend.core.db import db # Corrected
-from backend.core.config import settings # Corrected
-from backend.services.auth.schemas import UserCreate, UserPublic # Ensure UserCreate is imported
+from . import service as auth_service # Changed
+from . import schemas as auth_schemas # Changed
+from core.db import db # Changed
+from core.config import settings # Changed
+from .schemas import UserCreate, UserPublic # Changed
 
 # Get a logger instance
 logger = logging.getLogger(__name__)

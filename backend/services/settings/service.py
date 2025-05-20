@@ -1,9 +1,9 @@
 from typing import Optional, List
 from sqlalchemy import asc, desc
 
-from backend.core.db import db
-from backend.services.settings.models import SystemSetting # Import the model from its new location
-from backend.services.settings import schemas # Import schemas from its new location
+from core.db import db
+from .models import SystemSetting
+from . import schemas
 
 class PagedSettingsResponse:
     def __init__(self, items: List[SystemSetting], total: int, page: int, per_page: int):
