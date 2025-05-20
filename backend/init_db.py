@@ -12,28 +12,36 @@ if str(backend_dir) not in sys.path:
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from flask_migrate import Migrate, upgrade
+from flask_migrate import Migrate, init, migrate, upgrade
 from app import create_app
 from core.config import settings
 from core.db import db
 
-def run_migrations():
-    """Run database migrations"""
+def init_database():
+    """Initialize the database and run migrations"""
     try:
         app = create_app(settings)
         
         # Initialize migrations
-        migrate = Migrate(app, db)
+        migrate_instance = Migrate(app, db)
         
-        # Run migrations within app context
         with app.app_context():
+            # Check if migrations directory exists
+            if not os.path.exists(os.path.join(backend_dir, 'migrations')):
+                print("Initializing migrations directory...")
+                init()
+            
+            print("Creating migration...")
+            migrate(message='Initial migration')
+            
+            print("Applying migrations...")
             upgrade()
             
-        print("Migrations completed successfully!")
+        print("Database initialization completed successfully!")
         
     except Exception as e:
-        print(f"Error running migrations: {str(e)}")
+        print(f"Error initializing database: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
-    run_migrations() 
+    init_database() 
