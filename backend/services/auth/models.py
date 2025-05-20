@@ -51,6 +51,7 @@ class User(db.Model):
 
 class UserRole(db.Model):
     __tablename__ = "user_roles"
+    __table_args__ = {'extend_existing': True}  # Add this line
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), unique=True, nullable=False)
