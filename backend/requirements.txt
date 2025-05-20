@@ -1,0 +1,18 @@
+Flask>=2.0.0
+Flask-SQLAlchemy>=2.5.0
+Flask-Migrate>=3.0.0 # For Alembic integration with Flask
+Flask-RESTX>=0.5.0
+Flask-JWT-Extended>=4.0.0
+SQLAlchemy>=1.4.0,<2.0.0 # Sticking to 1.4.x for now as blueprint mentions SQLAlchemy 2 more broadly
+alembic>=1.7.0
+psycopg2-binary>=2.9.0
+pydantic>=1.9.0
+pydantic-settings>=2.0.0 # For Pydantic v2 BaseSettings
+python-dotenv>=0.19.0
+passlib>=1.7.0
+Werkzeug>=2.0.0 # Often good to pin this with Flask
+blinker>=1.4 # For signals, sometimes a Flask dependency
+Flask-CORS>=3.0.0 # For Cross-Origin Resource Sharing
+python-jose>=3.3.0 # For JWT operations (creating, signing, verifying)
+email-validator>=2.0.0 # For Pydantic email validation
+bcrypt==4.0.1 # For passlib bcrypt backend 

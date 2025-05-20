@@ -1,0 +1,1396 @@
+openapi: 3.0.0
+info:
+  title: Project Spark Blueprint API
+  version: v1
+  description: API for Project Spark Blueprint application
+
+servers:
+  - url: http://localhost:5000/v1 # Assuming API v1 prefix is handled by Flask app
+    description: Local development server
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      operationId: registerUser
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201': # Flask-RESTX typically returns 201 for successful POST creating a resource
+          description: User registered successfully. Returns token and user info.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse' # Backend sends LoginResponse on successful registration
+        '400':
+          description: Invalid input (e.g., validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Log in an existing user
+      operationId: loginUser
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid input (e.g., validation error for email/password format)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized (e.g., invalid credentials)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      summary: Refresh an access token
+      operationId: refreshToken
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '401':
+          description: Unauthorized (e.g., invalid or expired refresh token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # New Project and Member Endpoints
+  /projects/:
+    get:
+      summary: List current user's projects
+      operationId: listProjects
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectOutput'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      summary: Create a new project
+      operationId: createProject
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreateInput'
+      responses:
+        '201':
+          description: Project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectOutput'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /projects/{project_id}:
+    get:
+      summary: Get a project by ID
+      operationId: getProjectById
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectOutput'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a project by ID
+      operationId: updateProject
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdateInput'
+      responses:
+        '200':
+          description: Project updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectOutput'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      summary: Delete a project by ID
+      operationId: deleteProject
+      tags:
+        - Projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Project deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /projects/{project_id}/members:
+    get:
+      summary: List members of a project
+      operationId: listProjectMembers
+      tags:
+        - Project Members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A list of project members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectMemberOutput'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Add a member to a project
+      operationId: addProjectMember
+      tags:
+        - Project Members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProjectMemberInput'
+      responses:
+        '200': # Service returns updated project, could also be 201 if member is a new sub-resource
+          description: Member added successfully (returns updated project)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectOutput' # Consistent with current route impl
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError' # If project not found
+
+  /projects/{project_id}/members/{user_id}:
+    delete:
+      summary: Remove a member from a project
+      operationId: removeProjectMember
+      tags:
+        - Project Members
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project
+          schema:
+            type: string
+            format: uuid
+        - name: user_id
+          in: path
+          required: true
+          description: ID of the user to remove
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Member removed successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /projects/{project_id}/tasks/:
+    get:
+      summary: List tasks for a project
+      operationId: listTasksForProject
+      tags:
+        - Tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project to list tasks for
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A list of tasks for the project
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskOutput'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError' # If project not found
+    post:
+      summary: Create a new task for a project
+      operationId: createTaskForProject
+      tags:
+        - Tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project to create the task under
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreationInput'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOutput'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError' # If project not found
+
+  /tasks/{task_id}:
+    get:
+      summary: Get a task by ID
+      operationId: getTaskById
+      tags:
+        - Tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOutput'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a task by ID
+      operationId: updateTask
+      tags:
+        - Tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdateInput'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskOutput'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      summary: Delete a task by ID
+      operationId: deleteTask
+      tags:
+        - Tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Task deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # New Comment Endpoints
+  /comments/project/{project_id}/comments:
+    get:
+      summary: List comments for a project
+      operationId: listProjectComments
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A list of comments for the project
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentOutput' # Updated to CommentOutput
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Create a comment for a project
+      operationId: createProjectComment
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: ID of the project
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentInput'
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentOutput' # Updated to CommentOutput
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /comments/task/{task_id}/comments:
+    get:
+      summary: List comments for a task
+      operationId: listTaskComments
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: A list of comments for the task
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentOutput' # Updated to CommentOutput
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      summary: Create a comment for a task
+      operationId: createTaskComment
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: ID of the task
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentInput'
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentOutput' # Updated to CommentOutput
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /comments/{comment_id}:
+    get:
+      summary: Get a comment by ID
+      operationId: getCommentById
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          description: ID of the comment
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Comment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentOutput' # Updated to CommentOutput
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      summary: Update a comment by ID
+      operationId: updateComment
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          description: ID of the comment to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentUpdateInput' # Updated to CommentUpdateInput
+      responses:
+        '200':
+          description: Comment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentOutput' # Updated to CommentOutput
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      summary: Delete a comment by ID
+      operationId: deleteComment
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          description: ID of the comment to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Comment deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  schemas:
+    UserBase: # Corresponds to UserBase in Pydantic
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          nullable: true
+        language:
+          type: string
+          enum: ['en', 'es']
+          default: 'en'
+          nullable: true
+        role:
+          type: string
+          enum: ['admin', 'member']
+          default: 'member'
+          nullable: true
+
+    UserPublic: # Corresponds to UserPublic in Pydantic
+      allOf:
+        - $ref: '#/components/schemas/UserBase'
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid # Assuming UUIDs are represented as strings
+        created_at:
+          type: string
+          format: date-time
+
+    RegisterRequest: # Corresponds to RegisterRequest in Pydantic
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    LoginRequest: # Corresponds to LoginRequest in Pydantic
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    Token: # Corresponds to Token in Pydantic
+      type: object
+      required:
+        - access_token
+        - token_type
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+          nullable: true
+        token_type:
+          type: string
+          default: 'bearer'
+
+    LoginResponse: # Corresponds to LoginResponse in Pydantic
+      allOf:
+        - $ref: '#/components/schemas/Token'
+      type: object
+      required: # user is part of LoginResponse
+        - user
+      properties:
+        user:
+          $ref: '#/components/schemas/UserPublic'
+
+    RefreshTokenRequest: # Corresponds to RefreshTokenRequest in Pydantic
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    RefreshTokenResponse: # Corresponds to RefreshTokenResponse in Pydantic
+      type: object
+      required:
+        - access_token
+        - token_type
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          default: 'bearer'
+
+    ErrorResponse: # Generic error response
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    UserSimpleOutput: # Simplified user for nested representations
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+
+    ProjectStatusEnum:
+      type: string
+      enum:
+        - planning
+        - active
+        - on-hold
+        - completed
+        - cancelled
+      description: Status of the project
+
+    ProjectPriorityEnum:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+      description: Priority of the project
+
+    ProjectRoleEnum: # Role within a specific project
+      type: string
+      enum:
+        - editor
+        - viewer
+      description: Role of a user within a project
+
+    ProjectBase:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ProjectStatusEnum'
+        priority:
+          $ref: '#/components/schemas/ProjectPriorityEnum'
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the parent project, if any
+        progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          default: 0
+
+    ProjectCreateInput:
+      allOf:
+        - $ref: '#/components/schemas/ProjectBase'
+      type: object
+      required: # name is required from ProjectBase
+        - name 
+      properties:
+        team_member_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+      # owner_id is set by the backend based on authenticated user
+
+    ProjectUpdateInput:
+      type: object # Not allOf ProjectBase, as all fields are optional for update
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ProjectStatusEnum'
+          nullable: true
+        priority:
+          $ref: '#/components/schemas/ProjectPriorityEnum'
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        progress:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          nullable: true
+        team_member_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          
+    ProjectOutput:
+      allOf:
+        - $ref: '#/components/schemas/ProjectBase'
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        owner:
+          $ref: '#/components/schemas/UserSimpleOutput'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSimpleOutput'
+          readOnly: true
+
+    ProjectMemberOutput:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        role_in_project:
+          $ref: '#/components/schemas/ProjectRoleEnum'
+        user: # Details of the member user
+          $ref: '#/components/schemas/UserSimpleOutput'
+        added_at:
+          type: string
+          format: date-time
+      required:
+        - user_id
+        - role_in_project
+        - user
+        - added_at
+
+    AddProjectMemberInput:
+      type: object
+      required:
+        - user_id
+        - role_in_project
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user to add to the project
+        role_in_project:
+          $ref: '#/components/schemas/ProjectRoleEnum'
+          default: viewer
+
+    TaskStatusEnum:
+      type: string
+      enum:
+        - todo
+        - in_progress
+        - review
+        - done
+        - completed
+      description: Status of the task
+
+    TaskPriorityEnum:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+      description: Priority of the task
+
+    TaskTypeEnum:
+      type: string
+      enum:
+        - task
+        - meeting
+      description: Type of the task (regular task or meeting/event)
+
+    DependencyTypeEnum:
+      type: string
+      enum:
+        - finish-to-start
+        - start-to-start
+        - finish-to-finish
+        - start-to-finish
+      description: Type of dependency between tasks
+
+    TaskSimpleOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Task ID
+        title:
+          type: string
+          description: Task title
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+
+    TaskBase:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Task title
+        description:
+          type: string
+          nullable: true
+          description: Task description
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+          default: todo
+        priority:
+          $ref: '#/components/schemas/TaskPriorityEnum'
+          nullable: true
+          default: medium
+        task_type:
+          $ref: '#/components/schemas/TaskTypeEnum'
+          default: task
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: Due date for tasks of type 'task'
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Start date/time for tasks of type 'meeting'
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: End date/time for tasks of type 'meeting'
+        duration_minutes:
+          type: integer
+          nullable: true
+          description: Duration in minutes for tasks of type 'meeting'
+
+    TaskCreationInput:
+      allOf:
+        - $ref: '#/components/schemas/TaskBase'
+      type: object
+      required:
+        - title # project_id is from path
+      properties:
+        # project_id is part of the path /projects/{project_id}/tasks
+        assignee_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          description: List of User IDs to assign to the task
+        depends_on_task_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          description: List of Task IDs this task depends on
+        dependency_type_for_new:
+          $ref: '#/components/schemas/DependencyTypeEnum'
+          nullable: true
+          default: finish-to-start
+
+    TaskUpdateInput:
+      type: object # Not allOf TaskBase, all fields are optional
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TaskStatusEnum'
+          nullable: true
+        priority:
+          $ref: '#/components/schemas/TaskPriorityEnum'
+          nullable: true
+        task_type:
+          $ref: '#/components/schemas/TaskTypeEnum'
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        duration_minutes:
+          type: integer
+          nullable: true
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the project to move the task to (if changing project)
+        assignee_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          description: Complete list of User IDs to assign (replaces current list)
+        depends_on_task_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          description: Complete list of Task IDs this task depends on (replaces current list)
+        dependency_type_for_new:
+          $ref: '#/components/schemas/DependencyTypeEnum'
+          nullable: true
+
+    TaskOutput:
+      allOf:
+        - $ref: '#/components/schemas/TaskBase'
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        owner:
+          $ref: '#/components/schemas/UserSimpleOutput' # Re-use existing UserSimpleOutput
+        project:
+          $ref: '#/components/schemas/ProjectSimpleOutput' # Define ProjectSimpleOutput if not already present
+        assignees:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSimpleOutput'
+          description: List of users assigned to the task
+        dependencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskSimpleOutput'
+          description: List of tasks this task depends on
+
+    # Define ProjectSimpleOutput if it's specific to Task context and not globally defined
+    # For now, assuming it's defined or similar to UserSimpleOutput pattern
+    ProjectSimpleOutput: # This is a re-declaration, ensure it matches or use a shared one if available
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+
+    CommentBase:
+      type: object
+      properties:
+        text_content:
+          type: string
+          description: The content of the comment
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the project this comment belongs to (if any)
+        task_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the task this comment belongs to (if any)
+        parent_comment_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the parent comment if this is a reply
+
+    CommentInput: # Schema for creating a new comment
+      allOf:
+        - $ref: '#/components/schemas/CommentBase' # text_content, project_id, task_id, parent_comment_id
+      type: object
+      required:
+        - text_content
+      # project_id or task_id will be part of path for creation usually, but can be in body if a generic endpoint is used
+      # For our specific routes (/project/{id}/comments and /task/{id}/comments), project_id/task_id are from path
+      # So the input schema for those POST bodies might only need text_content and parent_comment_id.
+      # Let's simplify CommentInput to reflect this for the body of POST requests
+      # Simplified CommentInput for POST bodies where context (project/task) is from path:
+    CommentInputSimplified: # This is what will be used for POST requestBody
+      type: object
+      required:
+        - text_content
+      properties:
+        text_content:
+          type: string
+          description: Content of the comment
+          minLength: 1
+        parent_comment_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the parent comment for a reply
+
+    CommentUpdateInput: # Schema for updating a comment
+      type: object
+      properties:
+        text_content:
+          type: string
+          description: New content for the comment
+          minLength: 1
+          nullable: true # Allow sending null to clear? Or just make it optional.
+                        # For now, assume if sent, it must be non-empty. If not sent, no change.
+
+    CommentOutput: # Schema for comment responses
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        text_content:
+          type: string
+        author:
+          $ref: '#/components/schemas/UserSimpleOutput' # Reusing the existing UserSimpleOutput
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+        task_id:
+          type: string
+          format: uuid
+          nullable: true
+        parent_comment_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentOutput' # Recursive definition for replies
+      required:
+        - id
+        - text_content
+        - author
+        - created_at
+        - updated_at
+        - replies
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # Adding common responses to avoid repetition
+  responses:
+    UnauthorizedError:
+      description: Authentication information is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: User does not have permissions to perform this action.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: The requested resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequestError:
+      description: The request payload is malformed or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - bearerAuth: [] 
+# The global security definition means all endpoints require bearerAuth by default.
+# For public endpoints like /auth/login and /auth/register, 
+# you need to override this at the operation level with `security: []`
+# Let's adjust paths for /auth/login and /auth/register to explicitly have no security
+
+# Adjusting auth paths to have no global security
+# This should be done by finding these paths in the existing openapi.yaml and adding 'security: []'
+# For this edit, I will assume the edit tool handles merging this correctly.
+# If not, a separate edit focusing only on auth paths might be needed.
+
+# Path adjustments for auth (example, needs to be merged with existing auth paths)
+# /auth/register:
+#   post:
+#     security: [] 
+#     # ... rest of the definition
+# /auth/login:
+#   post:
+#     security: []
+#     # ... rest of the definition
+# /auth/refresh: # Refresh token might or might not need Bearer auth, depending on flow.
+               # Assuming refresh token itself is the auth for this one, also no Bearer.
+#   post:
+#     security: [] 
+#     # ... rest of the definition 
+
+tags:
+  - name: Authentication
+    description: User authentication operations
+  - name: Projects
+    description: Project management operations
+  - name: Project Members
+    description: Manage members of a project
+  - name: Tasks
+    description: Task management operations
+  - name: Task Comments
+    description: Operations for comments on tasks
+  - name: Comments
+    description: Operations related to comments on projects and tasks
