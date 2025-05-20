@@ -43,10 +43,9 @@ project_output_model = projects_ns.model('ProjectOutput', {
     'progress': fields.Integer(required=True, description='Project progress percentage (0-100)'),
     'createdBy': fields.String(required=True, description='Name of the user who created the project'),
     'owner': fields.Nested(user_simple_api_model, required=True, description='Project owner details'),
-    'members': fields.List(fields.Nested(user_simple_api_model), description='List of project members (UserSimpleOutput)'),
+    'members': fields.List(fields.Nested(project_member_api_model), description='List of project members'),
     'created_at': fields.DateTime(required=True, description='Timestamp of creation'),
-    'updated_at': fields.DateTime(description='Timestamp of last update'),
-    # 'members': fields.List(fields.Nested(project_member_api_model), description='List of project members') # We will handle this in a separate endpoint
+    'updated_at': fields.DateTime(description='Timestamp of last update')
 })
 
 project_creation_model = projects_ns.model('ProjectCreationInput', {
@@ -88,21 +87,19 @@ class ProjectList(Resource):
     def get(self):
         """List all projects for the current user (owner or member)."""
         current_user_id_str = get_jwt_identity()
-        print(f"[PROJECTS GET] JWT Identity (current_user_id_str): {current_user_id_str}") # DEBUG PRINT
         current_user_id = uuid.UUID(current_user_id_str)
         projects_db = service.get_projects_for_user(user_id=current_user_id)
         
         # Convert DB objects to Pydantic ProjectPublic schemas
-        projects_public_list = [schemas.ProjectPublic.from_orm(p_db) for p_db in projects_db]
+        projects_public_list = []
+        for p_db in projects_db:
+            try:
+                project_public = schemas.ProjectPublic.from_orm(p_db)
+                projects_public_list.append(project_public)
+            except Exception as e:
+                print(f"Error converting project {p_db.id}: {str(e)}")
+                continue
             
-        # Flask-RESTx @marshal_list_with will handle converting these Pydantic objects (or their dicts)
-        # using project_output_model. The key is that project_output_model was defined 
-        # in a way that pydantic_to_restx_marshallable (when defining the model) or direct field mapping can work.
-        # For direct marshalling by @marshal_list_with from Pydantic, ensure Pydantic objects are returned.
-        # If pydantic_to_restx_marshallable was used to *define* project_output_model itself from a Pydantic schema,
-        # then returning Pydantic objects here is fine.
-        # The current setup calls pydantic_to_restx_marshallable in GET/POST manually before returning.
-        # Let's adjust to return Pydantic objects directly and rely on @marshal_with.
         return projects_public_list, HTTPStatus.OK
 
     @jwt_required()

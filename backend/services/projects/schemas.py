@@ -103,7 +103,7 @@ class ProjectPublic(ProjectBase):
     def convert_members_to_project_members(self) -> 'ProjectPublic':
         if hasattr(self, 'members') and isinstance(self.members, list):
             # Get the member_roles and member_added_at from the source object if available
-            source_obj = self.model_fields_set.get('__pydantic_private__').get('object', None)
+            source_obj = self.__pydantic_private__.get('object', None)
             member_roles = getattr(source_obj, 'member_roles', {})
             member_added_at = getattr(source_obj, 'member_added_at', {})
 
