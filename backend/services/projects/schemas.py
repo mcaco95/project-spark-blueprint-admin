@@ -84,9 +84,8 @@ class ProjectPublic(ProjectBase):
     updated_at: Optional[datetime] = None
     progress: int = Field(..., ge=0, le=100) 
     
-    # This field will be populated from p_db.members (SQLAlchemy relationship) by from_attributes=True
-    # project_output_model in routes.py asks for 'members'
-    members: List[UserSimplePublic] = Field(default_factory=list)
+    # Change this to use ProjectMemberPublic which includes role information
+    members: List[ProjectMemberPublic] = Field(default_factory=list)
 
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 

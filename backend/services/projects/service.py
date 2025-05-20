@@ -83,8 +83,9 @@ def create_project(project_in: schemas.ProjectCreate, owner_id: UUID) -> Project
 def get_project_by_id(project_id: UUID, current_user_id: UUID) -> Optional[Project]:
     """Gets a single non-deleted project by its ID if the user is owner or member."""
     project = db.session.query(Project).options(
-        joinedload(Project.owner), # Eager load owner for createdBy
-        selectinload(Project.members) # Eager load members for teamMembers
+        joinedload(Project.owner),      # Eager load owner
+        joinedload(Project.members),    # Change to joinedload for consistent loading
+        joinedload(Project.members.of_type(User)).load_only(User.id, User.name, User.email)  # Explicitly load user fields
     ).filter(
         Project.id == project_id,
         Project.deleted_at == None,
@@ -99,8 +100,9 @@ def get_project_by_id(project_id: UUID, current_user_id: UUID) -> Optional[Proje
 def get_projects_for_user(user_id: UUID) -> List[Project]:
     """Gets all non-deleted projects where the user is either the owner or a member, with owner and members eager loaded."""
     projects = db.session.query(Project).options(
-        joinedload(Project.owner),      # Eager load owner for createdBy
-        selectinload(Project.members)   # Eager load members for teamMembers
+        joinedload(Project.owner),      # Eager load owner
+        joinedload(Project.members),    # Change to joinedload for consistent loading
+        joinedload(Project.members.of_type(User)).load_only(User.id, User.name, User.email)  # Explicitly load user fields
     ).filter(
         Project.deleted_at == None,
         (Project.owner_id == user_id) | 
@@ -348,27 +350,36 @@ def get_project_members(project_id: UUID, current_user_id: UUID) -> List[schemas
     if not project:
         return []
 
+    # Use a single query with explicit joins and selected columns
     members_data = db.session.query(
-        User,
+        User.id,
+        User.name,
+        User.email,
         project_members_table.c.role_in_project,
         project_members_table.c.added_at
     ).join(
         project_members_table,
         User.id == project_members_table.c.user_id
     ).filter(
-        project_members_table.c.project_id == project_id
+        project_members_table.c.project_id == project_id,
+        User.status == 'active'  # Only show active users
     ).all()
 
     result = []
-    for user_model, role, added_at_val in members_data:
-        user_simple_public = schemas.UserSimplePublic.from_orm(user_model)
+    for user_id, name, email, role, added_at_val in members_data:
+        # Create UserSimplePublic directly from queried fields
+        user_simple_public = schemas.UserSimplePublic(
+            id=user_id,
+            name=name,
+            email=email
+        )
         result.append(schemas.ProjectMemberPublic(
-            user_id=user_model.id,
+            user_id=user_id,
             role_in_project=role,
             user=user_simple_public,
             added_at=added_at_val
         ))
-    return result 
+    return result
 
 def get_projects_paginated(
     page: int = 1,

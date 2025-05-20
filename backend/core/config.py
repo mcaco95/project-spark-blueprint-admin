@@ -10,15 +10,17 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: Optional[str] = None
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
+    # Default local database URL
+    DEFAULT_LOCAL_DB_URL: str = "postgresql://postgres:postgres@localhost:5432/project_management"
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True, always=True)
-    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Optional[str]:
+    def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> str:
         if isinstance(v, str):
             return v
-        # Use DATABASE_URL if available
+        # First try DATABASE_URL (for Render), then try SQLALCHEMY_DATABASE_URI (for local)
         if values.get("DATABASE_URL"):
             return values.get("DATABASE_URL")
-        return None
+        return values.get("DEFAULT_LOCAL_DB_URL")
 
     # JWT Settings
     JWT_SECRET_KEY: str = "super-secret"  # CHANGE THIS IN PRODUCTION!
@@ -30,7 +32,7 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
-        env_file = ".env_backend" # Load from .env_backend file
+        env_file = ".env_backend"
         env_file_encoding = 'utf-8'
 
-settings = Settings(_env_file=None)  # Prevent loading from .env file to ensure environment variables take precedence 
+settings = Settings()  # Allow loading from .env file 

@@ -82,12 +82,12 @@ def output_json(data, code, headers=None):
 def create_app(config_object=settings):
     app = Flask(__name__)
     
-    # Ensure database URL is set
+    # Configure SQLAlchemy - ensure we have a database URL
     if not config_object.SQLALCHEMY_DATABASE_URI:
-        raise ValueError("Database URL is not configured. Please set DATABASE_URL environment variable.")
+        app.config["SQLALCHEMY_DATABASE_URI"] = config_object.DEFAULT_LOCAL_DB_URL
+    else:
+        app.config["SQLALCHEMY_DATABASE_URI"] = config_object.SQLALCHEMY_DATABASE_URI
     
-    # Configure SQLAlchemy
-    app.config["SQLALCHEMY_DATABASE_URI"] = config_object.SQLALCHEMY_DATABASE_URI
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
     # Set custom JSON encoder
@@ -95,8 +95,8 @@ def create_app(config_object=settings):
     # Propagate JWT_SECRET_KEY to Flask config for Flask-JWT-Extended
     app.config["JWT_SECRET_KEY"] = settings.JWT_SECRET_KEY
     # Make sure JWT_ACCESS_TOKEN_EXPIRE_MINUTES and JWT_REFRESH_TOKEN_EXPIRE_DAYS are integers
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=int(settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES))
-    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=int(settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS))
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS)
 
     # Initialize extensions
     db.init_app(app)

@@ -30,10 +30,13 @@ def create_task(
     
     if task_create_data.assignee_ids:
         assignee_users = session.execute(
-            select(User).where(User.id.in_(task_create_data.assignee_ids))
+            select(User).where(
+                User.id.in_(task_create_data.assignee_ids),
+                User.status == 'active'  # Only allow active users
+            )
         ).scalars().all()
         if len(assignee_users) != len(set(task_create_data.assignee_ids)):
-            # Log or handle missing users
+            # Log or handle missing/inactive users
             pass 
         db_task.assignees = assignee_users
 
@@ -112,9 +115,12 @@ def update_task(
     if task_update_data.assignee_ids is not None:
         if task_update_data.assignee_ids:
             assignee_users = session.execute(
-                select(User).where(User.id.in_(task_update_data.assignee_ids))
+                select(User).where(
+                    User.id.in_(task_update_data.assignee_ids),
+                    User.status == 'active'  # Only allow active users
+                )
             ).scalars().all()
-            # Add check for missing users if necessary
+            # Add check for missing/inactive users if necessary
             db_task.assignees = assignee_users
         else:
             db_task.assignees = []
