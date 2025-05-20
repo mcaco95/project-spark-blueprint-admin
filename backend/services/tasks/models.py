@@ -10,7 +10,8 @@ from core.db import db # Changed back from relative import
 task_assignees_table = Table(
     'task_assignees', db.metadata, # Use db.metadata
     Column('task_id', UUID(as_uuid=True), ForeignKey('tasks.id'), primary_key=True),
-    Column('user_id', UUID(as_uuid=True), ForeignKey('users.id'), primary_key=True)
+    Column('user_id', UUID(as_uuid=True), ForeignKey('users.id'), primary_key=True),
+    extend_existing=True
 )
 
 # Association table for Task Dependencies (Many-to-Many self-referential relationship for Tasks)
@@ -18,7 +19,8 @@ task_dependencies_table = Table(
     'task_dependencies', db.metadata, # Use db.metadata
     Column('task_id', UUID(as_uuid=True), ForeignKey('tasks.id'), primary_key=True), # The task that depends on another
     Column('depends_on_task_id', UUID(as_uuid=True), ForeignKey('tasks.id'), primary_key=True), # The task it depends on
-    Column('dependency_type', String, nullable=True, default='finish-to-start') # e.g., 'finish-to-start', 'start-to-start'
+    Column('dependency_type', String, nullable=True, default='finish-to-start'), # e.g., 'finish-to-start', 'start-to-start'
+    extend_existing=True
 )
 
 class Task(db.Model): # Inherit from db.Model

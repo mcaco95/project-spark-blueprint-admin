@@ -19,7 +19,8 @@ project_members_table = Table(
     Column('project_id', UUID(as_uuid=True), ForeignKey('projects.id', ondelete='CASCADE'), primary_key=True),
     Column('user_id', UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
     Column('role_in_project', DBEnum('viewer', 'editor', 'admin', name='project_role_enum', create_type=True), nullable=False, default='viewer'),
-    Column('added_at', DateTime, default=func.now(), nullable=False)
+    Column('added_at', DateTime, default=func.now(), nullable=False),
+    extend_existing=True
 )
 
 class Project(db.Model):
