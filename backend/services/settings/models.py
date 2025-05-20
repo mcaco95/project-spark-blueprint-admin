@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Text, Enum as DBEnum, Index
+from sqlalchemy import Column, String, Text, Enum as DBEnum, Index, DateTime
 from core.db import db # Changed
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
