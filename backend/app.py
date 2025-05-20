@@ -45,9 +45,39 @@ api = Api(
     title=settings.PROJECT_NAME,
     version='1.0', # This can be your internal API version or app version
     description='API for Project Management Application',
-    doc='/docs' # URL for Swagger UI documentation
+    doc='/docs', # URL for Swagger UI documentation
 )
 
+# Configure Flask-RESTX JSON encoder
+@api.representation('application/json')
+def output_json(data, code, headers=None):
+    if headers:
+        headers.update({'Content-Type': 'application/json'})
+    else:
+        headers = {'Content-Type': 'application/json'}
+    
+    # Convert datetime objects to ISO format strings
+    def convert_datetime(obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return obj
+
+    def handle_iterables(obj):
+        if isinstance(obj, dict):
+            return {k: handle_iterables(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [handle_iterables(item) for item in obj]
+        return convert_datetime(obj)
+
+    # Process the data through our converter
+    processed_data = handle_iterables(data)
+    
+    # Return JSON response
+    from flask import make_response, jsonify
+    response = make_response(jsonify(processed_data), code)
+    if headers is not None:
+        response.headers.extend(headers)
+    return response
 
 def create_app(config_object=settings):
     app = Flask(__name__)
