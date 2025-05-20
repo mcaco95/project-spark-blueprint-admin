@@ -1,7 +1,8 @@
 import uuid
-from sqlalchemy import Column, String, DateTime, func, Enum as DBEnum, Index
+from sqlalchemy import Column, String, Text, Enum as DBEnum, Index
+from core.db import db # Changed
 from sqlalchemy.dialects.postgresql import UUID
-from backend.core.db import db # Import db from core.db
+from sqlalchemy.sql import func
 
 # Define the enum type
 setting_type_enum = DBEnum('string', 'boolean', 'number', name='setting_type_enum', create_type=True)

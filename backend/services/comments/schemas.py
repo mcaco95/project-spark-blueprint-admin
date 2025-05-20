@@ -1,8 +1,8 @@
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, Field
 from typing import Optional, List
 from datetime import datetime
 
-from backend.services.auth.schemas import UserPublic
+from services.auth.schemas import UserPublic
 
 class CommentBase(BaseModel):
     text_content: str

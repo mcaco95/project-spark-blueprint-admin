@@ -4,6 +4,7 @@ import click # Import click for command arguments
 from flask.cli import with_appcontext
 from flask_migrate import Migrate, upgrade
 from flask import current_app
+import logging
 
 # Add the current directory (backend) to sys.path if not already there,
 # to help with module resolution when FLASK_APP points to this file.
@@ -12,14 +13,14 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-from backend.core.db import db       # SQLAlchemy instance
-from backend.core.config import settings
-from backend.app import create_app   # Flask app factory
+from core.db import db       # SQLAlchemy instance
+from core.config import settings
+from app import create_app   # Flask app factory
 
 # Import models for migrations
-from backend.services.auth.models import User
-from backend.services.projects.models import Project # Import the new Project model
-# from backend.services.tasks.models import Task     # Example for future models
+from services.auth.models import User
+from services.projects.models import Project # Import the new Project model
+# from services.tasks.models import Task     # Example for future models
 
 # Initialize Flask app
 app = create_app(settings)
@@ -35,13 +36,15 @@ migrate = Migrate(app, db)
 # (venv) C:\...\backend> flask db upgrade
 
 @app.cli.command("create-admin")
-@click.argument("email")
-@click.argument("password")
-@with_appcontext
-def create_admin(email, password):
-    """Create an admin user."""
-    from backend.services.auth.service import create_user, get_password_hash
-    from backend.services.auth.schemas import RegisterRequest
+@click.option('--email', prompt="Admin Email", help="The email for the new admin user.")
+@click.option('--password', prompt="Admin Password", hide_input=True, confirmation_prompt=True, help="The password for the new admin user.")
+@click.option('--name', prompt="Admin Name", help="The name for the new admin user.")
+def create_admin_user(email, password, name):
+    """Creates a new admin user."""
+    from services.auth.service import create_user, get_password_hash
+    from services.auth.schemas import RegisterRequest
+    
+    app = create_app(settings) # Create app instance to work within its context
 
     # Check if user already exists
     if User.query.filter_by(email=email).first():
@@ -52,7 +55,7 @@ def create_admin(email, password):
     user_data = RegisterRequest(
         email=email,
         password=password,
-        name="Admin User"
+        name=name
     )
     user = create_user(user_data)
     user.role = 'admin'

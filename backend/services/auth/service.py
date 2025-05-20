@@ -3,15 +3,15 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt as jose_jwt # Renamed to avoid conflict with Flask-JWT-Extended's jwt object
 from typing import Optional, Dict, Any, List
 
-from backend.core.db import db # Import db from core.db
-from backend.services.auth.models import User, UserRole, UserActivity # Assuming models.py is in the same directory
-from backend.core.config import settings # Corrected
-from backend.services.auth import schemas # Corrected
+from core.db import db # Import db from core.db
+from .models import User, UserRole, UserActivity # Assuming models.py is in the same directory
+from core.config import settings # Corrected
+from . import schemas # Corrected
 from sqlalchemy import asc, desc, func # Add this import for sorting and func
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select, delete as sqlalchemy_delete
 from uuid import UUID
-from backend.core.pagination import PaginatedResponse
+from core.pagination import PaginatedResponse
 
 # Password Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

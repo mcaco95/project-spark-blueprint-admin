@@ -1,7 +1,8 @@
 # This script is used to run the Flask development server.
 
-from backend.app import create_app
-from backend.core.config import settings
+import uvicorn
+from app import create_app
+from core.config import settings
 
 app = create_app(settings)
 
