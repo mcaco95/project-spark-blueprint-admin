@@ -54,14 +54,6 @@ def init_database():
                 print("Initializing migrations directory...")
                 init()
             
-            print("Creating migration...")
-            try:
-                migrate(message='Initial migration')
-            except Exception as e:
-                print(f"Migration creation error: {str(e)}")
-                # If migration already exists, we can continue
-                pass
-            
             print("Applying migrations...")
             upgrade()
             
