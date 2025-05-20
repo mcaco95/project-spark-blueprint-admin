@@ -28,8 +28,9 @@ def init_database():
     """Initialize the database and run migrations"""
     try:
         print("Creating Flask app...")
-        # Re-initialize settings to ensure Render env vars are picked up
-        current_settings = Settings()
+        # Re-initialize settings to ensure Render env vars are picked up,
+        # and prevent loading from .env file in this script's context.
+        current_settings = Settings(_env_file=None)
         app = create_app(current_settings) # Use the re-initialized settings
         
         print("Initializing SQLAlchemy...")
