@@ -83,9 +83,8 @@ def create_project(project_in: schemas.ProjectCreate, owner_id: UUID) -> Project
 def get_project_by_id(project_id: UUID, current_user_id: UUID) -> Optional[Project]:
     """Gets a single non-deleted project by its ID if the user is owner or member."""
     project = db.session.query(Project).options(
-        joinedload(Project.owner),      # Eager load owner
-        joinedload(Project.members),    # Change to joinedload for consistent loading
-        joinedload(Project.members.of_type(User)).load_only(User.id, User.name, User.email)  # Explicitly load user fields
+        joinedload(Project.owner),
+        joinedload(Project.members)
     ).filter(
         Project.id == project_id,
         Project.deleted_at == None,
@@ -95,14 +94,34 @@ def get_project_by_id(project_id: UUID, current_user_id: UUID) -> Optional[Proje
             .filter(project_members_table.c.user_id == current_user_id)
         ))
     ).first()
+
+    if project:
+        # Load member details including role and added_at
+        member_details = db.session.query(
+            User,
+            project_members_table.c.role_in_project,
+            project_members_table.c.added_at
+        ).join(
+            project_members_table,
+            and_(
+                project_members_table.c.user_id == User.id,
+                project_members_table.c.project_id == project.id
+            )
+        ).all()
+        
+        # Replace the members list with properly formatted member objects
+        project.members = [member[0] for member in member_details]
+        # Store the role and added_at information for schema conversion
+        project.member_roles = {str(member[0].id): member[1] for member in member_details}
+        project.member_added_at = {str(member[0].id): member[2] for member in member_details}
+
     return project
 
 def get_projects_for_user(user_id: UUID) -> List[Project]:
     """Gets all non-deleted projects where the user is either the owner or a member, with owner and members eager loaded."""
     projects = db.session.query(Project).options(
-        joinedload(Project.owner),      # Eager load owner
-        joinedload(Project.members),    # Change to joinedload for consistent loading
-        joinedload(Project.members.of_type(User)).load_only(User.id, User.name, User.email)  # Explicitly load user fields
+        joinedload(Project.owner),
+        joinedload(Project.members)
     ).filter(
         Project.deleted_at == None,
         (Project.owner_id == user_id) | 
@@ -111,6 +130,27 @@ def get_projects_for_user(user_id: UUID) -> List[Project]:
             .filter(project_members_table.c.user_id == user_id)
         ))
     ).order_by(Project.created_at.desc()).all()
+
+    # For each project, load the member details including role and added_at
+    for project in projects:
+        member_details = db.session.query(
+            User,
+            project_members_table.c.role_in_project,
+            project_members_table.c.added_at
+        ).join(
+            project_members_table,
+            and_(
+                project_members_table.c.user_id == User.id,
+                project_members_table.c.project_id == project.id
+            )
+        ).all()
+        
+        # Replace the members list with properly formatted member objects
+        project.members = [member[0] for member in member_details]
+        # Store the role and added_at information for schema conversion
+        project.member_roles = {str(member[0].id): member[1] for member in member_details}
+        project.member_added_at = {str(member[0].id): member[2] for member in member_details}
+
     return projects
 
 def update_project(

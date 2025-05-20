@@ -1,6 +1,6 @@
 # Project related Pydantic schemas will go here 
 
-from pydantic import BaseModel, UUID4, Field, EmailStr, ConfigDict, computed_field
+from pydantic import BaseModel, UUID4, Field, EmailStr, ConfigDict, computed_field, model_validator
 from typing import Optional, List
 from datetime import datetime, date
 from enum import Enum
@@ -79,17 +79,17 @@ class ProjectUpdate(BaseModel):
 class ProjectPublic(ProjectBase):
     id: UUID4
     owner_id: UUID4
-    owner: UserSimplePublic # Information about the project owner
+    owner: UserSimplePublic  # Information about the project owner
     created_at: datetime
     updated_at: Optional[datetime] = None
-    progress: int = Field(..., ge=0, le=100) 
-    
+    progress: int = Field(..., ge=0, le=100)
+
     # Change this to use ProjectMemberPublic which includes role information
     members: List[ProjectMemberPublic] = Field(default_factory=list)
 
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 
-    @computed_field # For project_output_model in routes.py which expects 'due_date'
+    @computed_field
     @property
     def due_date(self) -> Optional[date]:
         return self.end_date
@@ -98,6 +98,29 @@ class ProjectPublic(ProjectBase):
     @property
     def createdBy(self) -> str:
         return self.owner.name if self.owner and self.owner.name else "Unknown User"
+
+    @model_validator(mode='after')
+    def convert_members_to_project_members(self) -> 'ProjectPublic':
+        if hasattr(self, 'members') and isinstance(self.members, list):
+            # Get the member_roles and member_added_at from the source object if available
+            source_obj = self.model_fields_set.get('__pydantic_private__').get('object', None)
+            member_roles = getattr(source_obj, 'member_roles', {})
+            member_added_at = getattr(source_obj, 'member_added_at', {})
+
+            converted_members = []
+            for member in self.members:
+                if isinstance(member, User):  # If it's a SQLAlchemy User object
+                    member_id = str(member.id)
+                    user_simple = UserSimplePublic.model_validate(member)
+                    converted_member = ProjectMemberPublic(
+                        user_id=member.id,
+                        user=user_simple,
+                        role_in_project=member_roles.get(member_id, ProjectRoleEnum.viewer),
+                        added_at=member_added_at.get(member_id, datetime.now())
+                    )
+                    converted_members.append(converted_member)
+            self.members = converted_members
+        return self
 
 # Schema for a simplified project output, typically for nesting
 class ProjectSimpleOutput(BaseModel):
