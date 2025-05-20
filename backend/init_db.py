@@ -30,7 +30,6 @@ def init_database():
         app = create_app(settings)
         
         print("Initializing SQLAlchemy...")
-        db.init_app(app)
         
         print("Setting up Flask-Migrate...")
         migrate_instance = Migrate(app, db)
