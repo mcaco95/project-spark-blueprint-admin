@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from http import HTTPStatus
 import uuid
 from typing import List
+from datetime import datetime
 
 from backend.services.tasks import service as task_service
 from backend.services.tasks import schemas as task_schemas
@@ -116,6 +117,53 @@ task_update_model = tasks_ns.model('TaskUpdateInput', {
     'dependency_type_for_new': fields.String(enum=[e.value for e in task_schemas.DependencyTypeEnum], allow_null=True)
 })
 
+# Performance Metrics Models
+task_priority_counts = tasks_ns.model('TaskPriorityCounts', {
+    'high': fields.Integer(required=True),
+    'medium': fields.Integer(required=True),
+    'low': fields.Integer(required=True)
+})
+
+task_status_distribution = tasks_ns.model('TaskStatusDistribution', {
+    'name': fields.String(required=True),
+    'value': fields.Integer(required=True)
+})
+
+user_performance_metrics = tasks_ns.model('UserPerformanceMetrics', {
+    'totalTasks': fields.Integer(required=True),
+    'completedTasks': fields.Integer(required=True),
+    'inProgressTasks': fields.Integer(required=True),
+    'overdueTasks': fields.Integer(required=True),
+    'averageCompletionTime': fields.Float(required=True),
+    'taskVelocity': fields.Float(required=True),
+    'tasksByPriority': fields.List(fields.Nested(task_status_distribution)),
+    'taskStatusDistribution': fields.List(fields.Nested(task_status_distribution)),
+    'completionTrend': fields.List(fields.Raw),
+    'activeTasks': fields.List(fields.Raw),
+    'recentlyCompletedTasks': fields.List(fields.Raw),
+    'lastActiveDate': fields.DateTime(required=False),
+    'activeProjects': fields.List(fields.Raw)
+})
+
+task_distribution_item = tasks_ns.model('TaskDistributionItem', {
+    'userId': fields.String(required=True),
+    'userName': fields.String(required=True),
+    'taskCount': fields.Integer(required=True),
+    'taskStatusDistribution': fields.List(fields.Nested(task_status_distribution))
+})
+
+task_completion_trend_item = tasks_ns.model('TaskCompletionTrendItem', {
+    'date': fields.String(required=True),
+    'completed': fields.Integer(required=True),
+    'total': fields.Integer(required=True)
+})
+
+team_metrics = tasks_ns.model('TeamMetrics', {
+    'taskDistribution': fields.List(fields.Nested(task_distribution_item)),
+    'averageTasksPerUser': fields.Float(required=True),
+    'averageCompletionTime': fields.Float(required=True),
+    'taskCompletionTrend': fields.List(fields.Nested(task_completion_trend_item))
+})
 
 # --- Task Routes ---
 # Path for project-specific tasks: /projects/{project_id}/tasks
@@ -209,6 +257,30 @@ class TaskDetail(Resource):
         if not deleted:
             abort(HTTPStatus.NOT_FOUND, "Task not found or user not authorized to delete.")
         return '', HTTPStatus.NO_CONTENT
+
+@tasks_ns.route('/metrics/user/<string:user_id>')
+class UserMetrics(Resource):
+    @tasks_ns.doc('get_user_metrics')
+    @tasks_ns.marshal_with(user_performance_metrics)
+    @tasks_ns.param('days', 'Number of days to analyze', type=int, default=30)
+    @jwt_required()
+    def get(self, user_id: str):
+        """Get performance metrics for a specific user"""
+        days = request.args.get('days', 30, type=int)
+        metrics = task_service.get_user_performance_metrics(user_id, days)
+        return metrics
+
+@tasks_ns.route('/metrics/team')
+class TeamMetrics(Resource):
+    @tasks_ns.doc('get_team_metrics')
+    @tasks_ns.marshal_with(team_metrics)
+    @tasks_ns.param('days', 'Number of days to analyze', type=int, default=30)
+    @jwt_required()
+    def get(self):
+        """Get team-wide performance metrics"""
+        days = request.args.get('days', 30, type=int)
+        metrics = task_service.get_team_metrics(days)
+        return metrics
 
 # The main application (e.g., in app.py or main.py) will need to include this namespace:
 # from backend.services.tasks.routes import tasks_ns

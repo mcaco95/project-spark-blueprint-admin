@@ -15,6 +15,7 @@ export interface Project {
   priority: ProjectPriority;
   progress: number;
   teamMembers: string[];
+  members: UserSimple[];
   owner: UserSimple;
   createdBy: string;
   createdAt: string | Date;

@@ -12,10 +12,12 @@ import json
 # from flask_sqlalchemy import SQLAlchemy # Removed
 from backend.core.db import db # Added
 from backend.core.config import settings
-from backend.services.auth.routes import auth_ns # Import the auth namespace
+from backend.services.auth.routes import auth_ns, admin_users_ns, admin_roles_ns # Import the auth, admin_users, and admin_roles namespaces
 from backend.services.projects.routes import projects_ns # Import the projects namespace
 from backend.services.tasks.routes import tasks_ns # Import the tasks namespace
 from backend.services.comments.routes import comments_ns # Import the comments namespace
+from backend.services.settings.routes import admin_settings_ns # Import the admin_settings namespace
+from backend.services.admin.routes import admin_projects_ns, admin_tasks_ns, admin_analytics_ns # Import admin namespaces
 from backend.services.auth.models import User # Added: Import User model
 # from .services.projects.routes import projects_bp # Example for future
 
@@ -63,8 +65,15 @@ def create_app(config_object=settings):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    # Enable CORS for all origins and credentials
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+    # Enable CORS for all origins with proper preflight handling
+    CORS(app, resources={
+        r"/*": {
+            "origins": ["http://localhost:8080", "http://localhost:5000"],  # Add both frontend URLs
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
 
     # Initialize Flask-RESTX Api with the Flask app
     api.init_app(app)
@@ -72,6 +81,12 @@ def create_app(config_object=settings):
     # Add namespaces to the API
     # All routes from auth_ns will be prefixed with /v1/auth
     api.add_namespace(auth_ns, path=f'{settings.API_V1_STR}/auth')
+    api.add_namespace(admin_users_ns, path=f'{settings.API_V1_STR}/admin/users') # Register admin_users namespace
+    api.add_namespace(admin_roles_ns, path=f'{settings.API_V1_STR}/admin/roles') # Register admin_roles namespace
+    api.add_namespace(admin_settings_ns, path=f'{settings.API_V1_STR}/admin/settings') # Register admin_settings namespace
+    api.add_namespace(admin_projects_ns, path=f'{settings.API_V1_STR}/admin/projects')
+    api.add_namespace(admin_tasks_ns, path=f'{settings.API_V1_STR}/admin/tasks')
+    api.add_namespace(admin_analytics_ns, path=f'{settings.API_V1_STR}/admin/analytics')
     api.add_namespace(projects_ns, path=f'{settings.API_V1_STR}/projects') # Register projects namespace
     api.add_namespace(tasks_ns, path=f'{settings.API_V1_STR}/tasks') # Register tasks namespace
     api.add_namespace(comments_ns, path=f'{settings.API_V1_STR}/comments') # Register comments namespace

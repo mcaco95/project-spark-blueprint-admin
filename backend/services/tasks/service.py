@@ -1,14 +1,17 @@
 # Placeholder for task services 
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import select, delete as sqlalchemy_delete
+from sqlalchemy import select, delete as sqlalchemy_delete, desc, asc, func, and_, case, or_
 from uuid import UUID
-from typing import List, Optional
+from typing import List, Optional, Dict
+from datetime import datetime, timedelta
 
 from backend.services.tasks.models import Task, task_assignees_table, task_dependencies_table
 from backend.services.tasks.schemas import TaskCreate, TaskUpdate, TaskStatusEnum, DependencyTypeEnum
 from backend.services.auth.models import User # For fetching assignees
-from backend.services.projects.models import Project # For validating project existence
+from backend.services.projects.models import Project, project_members_table # For validating project existence
 from backend.core.db import db # Assuming db.session is the synchronous session
+from backend.core.pagination import PaginatedResponse
+from backend.services.projects.service import get_projects_for_user
 
 def create_task(
     task_create_data: TaskCreate, 
@@ -152,3 +155,275 @@ def delete_task(task_id: UUID, user_id: UUID) -> bool:
     session.delete(db_task)
     session.commit()
     return True 
+
+def get_tasks_paginated(
+    page: int = 1,
+    per_page: int = 10,
+    status: Optional[str] = None,
+    sort_by: str = 'created_at',
+    sort_order: str = 'desc'
+) -> PaginatedResponse[Task]:
+    """Gets a paginated list of all tasks for admin view."""
+    query = db.session.query(Task).options(
+        joinedload(Task.owner),
+        joinedload(Task.project),
+        selectinload(Task.assignees)
+    )
+
+    # Apply filters
+    if status:
+        query = query.filter(Task.status == status)
+
+    # Apply sorting
+    sort_column = getattr(Task, sort_by, Task.created_at)
+    if sort_order == 'desc':
+        query = query.order_by(desc(sort_column))
+    else:
+        query = query.order_by(asc(sort_column))
+
+    # Apply pagination
+    total = query.count()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    return PaginatedResponse[Task](
+        items=items,
+        total=total,
+        page=page,
+        per_page=per_page
+    ) 
+
+def get_user_performance_metrics(user_id: UUID, days: int = 30) -> Dict:
+    """Calculate performance metrics for a specific user."""
+    print(f"DEBUG METRICS: get_user_performance_metrics called with user_id: {user_id}")
+    session = db.session
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    # Get tasks assigned to the user or owned by the user
+    tasks_query = (
+        session.query(Task)
+        .outerjoin(task_assignees_table)
+        .filter(
+            and_(
+                Task.created_at >= start_date,
+                or_(
+                    Task.owner_id == user_id,
+                    task_assignees_table.c.user_id == user_id
+                )
+            )
+        )
+        .distinct()
+    )
+
+    # Calculate basic metrics
+    total_tasks = tasks_query.count()
+    completed_tasks = tasks_query.filter(Task.status.in_(['completed', 'done'])).count()
+    in_progress_tasks = tasks_query.filter(Task.status == 'in_progress').count()
+    todo_tasks = tasks_query.filter(Task.status == 'todo').count()
+    review_tasks = tasks_query.filter(Task.status == 'review').count()
+    
+    # Calculate overdue tasks
+    overdue_tasks = (
+        tasks_query
+        .filter(and_(
+            Task.due_date < datetime.utcnow().date(),
+            Task.status.in_(['todo', 'in_progress', 'review'])
+        ))
+        .count()
+    )
+
+    # Get tasks by status
+    tasks_by_status = (
+        tasks_query
+        .with_entities(
+            Task.status,
+            func.count(Task.id.distinct())
+        )
+        .group_by(Task.status)
+        .all()
+    )
+    
+    print("DEBUG - Tasks by status:", tasks_by_status)
+    
+    status_counts = []
+    for status, count in tasks_by_status:
+        if status:  # Ensure status is not None
+            status_counts.append({
+                'name': status,
+                'value': count
+            })
+    
+    print("DEBUG - Status counts:", status_counts)
+
+    # Get tasks by priority
+    tasks_by_priority = (
+        tasks_query
+        .with_entities(
+            Task.priority,
+            func.count(Task.id.distinct())
+        )
+        .group_by(Task.priority)
+        .all()
+    )
+    
+    priority_counts = []
+    for priority, count in tasks_by_priority:
+        if priority:  # Ensure priority is not None
+            priority_counts.append({
+                'name': priority,
+                'value': count
+            })
+
+    # Get active tasks with project info
+    active_tasks = (
+        tasks_query
+        .options(joinedload(Task.project))  # Eager load project relationship
+        .filter(Task.status.in_(['todo', 'in_progress', 'review']))
+        .order_by(Task.due_date.asc())
+        .limit(5)
+        .all()
+    )
+
+    # Get active projects
+    active_projects = (
+        session.query(Project)
+        .filter(
+            Project.status == 'active',
+            Project.deleted_at.is_(None),
+            or_(
+                Project.owner_id == user_id,
+                Project.id.in_(
+                    session.query(project_members_table.c.project_id)
+                    .filter(project_members_table.c.user_id == user_id)
+                )
+            )
+        )
+        .all()
+    )
+    print(f"DEBUG METRICS: Found {len(active_projects)} active projects raw from query.")
+    if active_projects:
+        print(f"DEBUG METRICS: First raw active project details - ID: {active_projects[0].id}, Name: {active_projects[0].name}, Status: {active_projects[0].status}, Owner: {active_projects[0].owner_id}")
+
+    # Format active projects data
+    active_projects_data = []
+    for project in active_projects:
+        active_projects_data.append({
+            "id": str(project.id),
+            "name": project.name,
+            "description": project.description or "",
+            "status": project.status,
+            "endDate": project.end_date.isoformat() if project.end_date else None,
+            "progress": project.progress  # Use the progress directly from the project
+        })
+    
+    print(f"DEBUG METRICS: Formatted active_projects_data: {active_projects_data}")
+
+    # Format active tasks for response
+    formatted_active_tasks = []
+    for task in active_tasks:
+        formatted_active_tasks.append({
+            "id": str(task.id),
+            "title": task.title,
+            "status": task.status,
+            "priority": task.priority,
+            "dueDate": task.due_date.isoformat() if task.due_date else None,
+            "projectId": str(task.project_id) if task.project_id else None,
+            "projectName": task.project.name if task.project else None
+        })
+
+    return {
+        "totalTasks": total_tasks,
+        "completedTasks": completed_tasks,
+        "inProgressTasks": in_progress_tasks,
+        "todoTasks": todo_tasks,
+        "reviewTasks": review_tasks,
+        "overdueTasks": overdue_tasks,
+        "taskStatusDistribution": status_counts,
+        "tasksByPriority": priority_counts,
+        "activeTasks": formatted_active_tasks,
+        "activeProjects": active_projects_data
+    }
+
+def get_team_metrics(days: int = 30) -> Dict:
+    """Calculate team-wide metrics."""
+    session = db.session
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
+
+    print("DEBUG - Fetching team metrics for all users")
+
+    # Get all users first
+    users = session.query(User).all()
+    
+    metrics = {
+        'taskDistribution': [],
+        'averageTasksPerUser': 0,
+        'averageCompletionTime': 0,
+        'topPerformers': []
+    }
+
+    total_tasks = 0
+    for user in users:
+        print(f"DEBUG - Processing user: {user.name} ({user.id})")
+        
+        # Get task count for this user (both assigned and owned tasks)
+        user_tasks = (
+            session.query(Task)
+            .outerjoin(task_assignees_table)
+            .filter(
+                and_(
+                    Task.created_at >= start_date,
+                    or_(
+                        Task.owner_id == user.id,
+                        task_assignees_table.c.user_id == user.id
+                    )
+                )
+            )
+        )
+        
+        task_count = user_tasks.count()
+        print(f"DEBUG - Task count for {user.name}: {task_count}")
+        
+        # Get task status distribution for this user
+        tasks_by_status = (
+            user_tasks
+            .with_entities(
+                Task.status,
+                func.count(Task.id.distinct())
+            )
+            .group_by(Task.status)
+            .all()
+        )
+        
+        print(f"DEBUG - Tasks by status:", tasks_by_status)
+        
+        status_counts = []
+        for status, count in tasks_by_status:
+            if status:  # Ensure status is not None
+                status_counts.append({
+                    'name': status,
+                    'value': count
+                })
+        
+        print(f"DEBUG - Status distribution for {user.name}:", status_counts)
+        
+        metrics['taskDistribution'].append({
+            'userId': str(user.id),
+            'userName': user.name,
+            'taskCount': task_count,
+            'taskStatusDistribution': status_counts
+        })
+        total_tasks += task_count
+
+    # Calculate averages
+    user_count = len(users) or 1  # Avoid division by zero
+    metrics['averageTasksPerUser'] = total_tasks / user_count
+
+    print("DEBUG - Final metrics:", metrics)
+    return metrics
+
+def get_task_history(task_id: UUID) -> List[Dict]:
+    """Get the history of changes for a task."""
+    # This would require implementing task history tracking
+    # For now, return a placeholder
+    return [] 

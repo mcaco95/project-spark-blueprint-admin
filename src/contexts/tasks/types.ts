@@ -6,7 +6,7 @@ export interface TaskContextType {
   tasks: Task[];
   isLoadingTasks: boolean;
   addTask: (taskDataForApi: ApiTaskCreatePayload) => Promise<Task | null>;
-  updateTask: (task: Task) => void;
+  updateTask: (taskToUpdate: Partial<Task> & { id: string }) => Promise<Task | null>;
   deleteTask: (taskId: string) => void;
   moveTask: (taskId: string, sourceColId: string, destColId: string, newIndex?: number) => void;
   getTasksByProject: (projectId: string | null) => Task[];

@@ -212,15 +212,86 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateTask = (task: Task) => {
-    // This still needs to be refactored for API calls
-    const enhancedTask = {
-      ...task,
-      taskType: task.taskType || ((task.date && task.time) ? 'meeting' : 'task')
-    };
-    // TODO: Implement API call for updateTask in taskActions.ts and use token
-    console.warn("updateTask in TaskContext still uses local updates. API integration needed.");
-    return taskActions.updateTask(enhancedTask, tasks, setTasks, board, setBoard);
+  const updateTask = async (taskToUpdate: Partial<Task> & { id: string }): Promise<Task | null> => {
+    if (!token) {
+      toast.error("Authentication token not available. Please log in.");
+      return null;
+    }
+    if (!taskToUpdate || !taskToUpdate.id) {
+      toast.error("Task data or Task ID is missing for update.");
+      return null;
+    }
+
+    // Construct the API payload (similar to taskActions.ts but using taskToUpdate directly)
+    const payload: taskActions.ApiTaskUpdatePayload = {}; // Use the interface from taskActions
+    if (taskToUpdate.title !== undefined) payload.title = taskToUpdate.title;
+    if (taskToUpdate.description !== undefined) payload.description = taskToUpdate.description;
+    if (taskToUpdate.status !== undefined) payload.status = taskToUpdate.status;
+    if (taskToUpdate.priority !== undefined) payload.priority = taskToUpdate.priority;
+    if (taskToUpdate.taskType !== undefined) payload.task_type = taskToUpdate.taskType;
+    
+    if (taskToUpdate.dueDate !== undefined) {
+      payload.due_date = taskToUpdate.dueDate ? 
+        (typeof taskToUpdate.dueDate === 'string' ? taskToUpdate.dueDate.split('T')[0] : new Date(taskToUpdate.dueDate).toISOString().split('T')[0]) 
+        : null;
+    }
+
+    // Refined logic for start_date and end_date
+    if (taskToUpdate.startDate !== undefined && taskToUpdate.startDate !== null) {
+      try {
+        const startDateIso = typeof taskToUpdate.startDate === 'string' 
+          ? taskToUpdate.startDate 
+          : new Date(taskToUpdate.startDate).toISOString();
+        if (startDateIso) payload.start_date = startDateIso;
+      } catch (e) { console.warn("Invalid startDate for API payload", taskToUpdate.startDate); }
+    }
+
+    if (taskToUpdate.endDate !== undefined && taskToUpdate.endDate !== null) {
+      try {
+        const endDateIso = typeof taskToUpdate.endDate === 'string'
+          ? taskToUpdate.endDate
+          : new Date(taskToUpdate.endDate).toISOString();
+        if (endDateIso) payload.end_date = endDateIso;
+      } catch (e) { console.warn("Invalid endDate for API payload", taskToUpdate.endDate); }
+    }
+
+    if (taskToUpdate.duration !== undefined) payload.duration_minutes = taskToUpdate.duration;
+    if (taskToUpdate.project_id !== undefined) payload.project_id = taskToUpdate.project_id;
+    
+    if (taskToUpdate.assignees !== undefined) {
+      payload.assignee_ids = taskToUpdate.assignees ? taskToUpdate.assignees.map(a => a.id) : [];
+    }
+    // Add depends_on_task_ids if needed for update payload, similar to assignees
+    if (taskToUpdate.dependencies !== undefined) {
+        payload.depends_on_task_ids = taskToUpdate.dependencies ? taskToUpdate.dependencies.map(d => d.id) : [];
+    }
+
+    try {
+      const path = `/tasks/${taskToUpdate.id}`;
+      const updatedTaskFromApi = await fetchApi<Task, taskActions.ApiTaskUpdatePayload>(
+        path,
+        'PUT',
+        payload,
+        token
+      );
+
+      if (updatedTaskFromApi) {
+        // Ensure taskType is set correctly after API update, as ensureTaskType was used for initial fetch
+        const finalUpdatedTask = ensureTaskType(updatedTaskFromApi);
+
+        setTasks(prevTasks => prevTasks.map(t => t.id === finalUpdatedTask.id ? finalUpdatedTask : t));
+        // The board will auto-update due to the useEffect dependency on 'tasks'
+        toast.success('Task updated successfully via API!');
+        return finalUpdatedTask;
+      } else {
+        toast.error('Failed to update task: No data returned from API.');
+        return null;
+      }
+    } catch (error: any) {
+      console.error("Error updating task in TaskContext:", error);
+      toast.error(`Failed to update task: ${error.message || 'Network error'}`);
+      return null;
+    }
   };
 
   const deleteTask = (taskId: string) => {

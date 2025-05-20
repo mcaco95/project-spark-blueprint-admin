@@ -14,7 +14,7 @@ export interface ProjectSimple {
 export interface TaskSimple {
   id: string; // UUID
   title: string;
-  status: 'todo' | 'in-progress' | 'review' | 'done' | 'completed';
+  status: 'todo' | 'in_progress' | 'review' | 'done' | 'completed';
 }
 
 export interface TaskComment {
@@ -40,7 +40,7 @@ export interface Task {
   id: string; // UUID, from backend
   title: string;
   description?: string | null;
-  status: 'todo' | 'in-progress' | 'review' | 'done' | 'completed';
+  status: 'todo' | 'in_progress' | 'review' | 'done' | 'completed';
   priority?: 'low' | 'medium' | 'high' | null;
   
   // Date fields - API will send as ISO strings. Handle parsing in frontend.

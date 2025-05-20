@@ -43,9 +43,15 @@ export interface ApiComment {
   replies: ApiComment[];
 }
 
+// Define a type for the comment post payload
+interface CommentPostPayload {
+  text_content: string;
+  parent_comment_id?: string;
+}
+
 const taskStatusColors: Record<string, string> = {
   'todo': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-  'in-progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+  'in_progress': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   'review': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
   'done': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   'completed': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
@@ -125,9 +131,10 @@ const TaskDetail = () => {
   const handleStatusChange = (newStatus: Task['status']) => {
     if (task) {
       const updatedTask = { ...task, status: newStatus };
+      console.log('TaskDetail: Sending to updateTask in context:', JSON.stringify(updatedTask, null, 2));
       updateTask(updatedTask);
       setTask(updatedTask);
-      toast.success(`Task status updated to ${newStatus.replace('-', ' ')}`);
+      toast.success(`Task status updated to ${newStatus.replace('_', ' ')}`);
     }
   };
 
@@ -145,10 +152,7 @@ const TaskDetail = () => {
       return;
     }
 
-    const payload: {
-      text_content: string;
-      parent_comment_id?: string;
-    } = {
+    const payload: CommentPostPayload = {
       text_content: newCommentText,
     };
 
@@ -159,7 +163,7 @@ const TaskDetail = () => {
     setIsLoadingComments(true); 
     setCommentError(null);
     try {
-      const newCommentFromApi = await fetchApi<ApiComment>(
+      const newCommentFromApi = await fetchApi<ApiComment, CommentPostPayload>(
         `/comments/task/${id}/comments`,
         'POST',
         payload,
@@ -333,7 +337,7 @@ const TaskDetail = () => {
               <div className="flex items-center gap-2">
                 <h1 className="text-3xl font-bold tracking-tight">{task.title}</h1>
                 <Badge className={taskStatusColors[task.status]}>
-                  {task.status === 'in-progress' ? 'In Progress' : task.status}
+                  {task.status === 'in_progress' ? 'In Progress' : task.status}
                 </Badge>
                 {task.priority && (
                   <Badge variant="outline" className={priorityColors[task.priority]}>
@@ -374,7 +378,7 @@ const TaskDetail = () => {
                       <ListChecks className="mr-2 h-4 w-4 text-muted-foreground" />
                       <span className="font-medium mr-2">Status:</span> 
                       <Badge className={taskStatusColors[task.status]}>
-                        {task.status === 'in-progress' ? 'In Progress' : task.status}
+                        {task.status === 'in_progress' ? 'In Progress' : task.status}
                       </Badge>
                     </div>
                   )}
@@ -478,7 +482,7 @@ const TaskDetail = () => {
                   <Button
                     variant="outline"
                     className="w-full justify-start"
-                    onClick={() => handleStatusChange('in-progress')}
+                    onClick={() => handleStatusChange('in_progress')}
                   >
                     <Clock className="h-4 w-4 mr-2" />
                     Mark as In Progress

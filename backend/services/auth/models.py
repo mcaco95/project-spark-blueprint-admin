@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, Enum as DBEnum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, func, Enum as DBEnum, ARRAY, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 # from app import db # Corrected to import from core.db
@@ -19,8 +19,10 @@ class User(db.Model):
     
     # Using DBEnum for database-level enum types
     role = Column(DBEnum('admin', 'member', name='role_enum', create_type=True), default='member', nullable=False)
+    status = Column(DBEnum('active', 'inactive', 'pending', name='user_status_enum', create_type=True), default='pending', nullable=False)
     language = Column(DBEnum('es', 'en', name='language_enum', create_type=True), default='en', nullable=False)
     
+    last_login = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -52,6 +54,7 @@ class UserRole(db.Model):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), unique=True, nullable=False)
     description = Column(String(255), nullable=True)
+    permissions = Column(ARRAY(String), nullable=False, default=[])
 
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
@@ -61,9 +64,23 @@ class UserRole(db.Model):
     def __repr__(self):
         return f'<UserRole {self.name}>'
 
+# SystemSetting model has been moved to backend.services.settings.models.py
+
 # Make sure all necessary imports from sqlalchemy are present at the top of the file:
 # import uuid
 # from sqlalchemy import Column, String, DateTime, func, Enum as DBEnum
 # from sqlalchemy.dialects.postgresql import UUID
 # from sqlalchemy.orm import relationship
 # from backend.core.db import db
+
+class UserActivity(db.Model):
+    __tablename__ = "user_activities"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    activity_type = Column(String(50), nullable=False)  # login, logout, action, etc.
+    description = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+
+    # Relationships
+    user = relationship("User", backref="activities")

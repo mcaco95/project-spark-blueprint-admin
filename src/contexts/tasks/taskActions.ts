@@ -21,6 +21,27 @@ export interface ApiTaskCreatePayload {
   dependency_type_for_new?: string | null; // e.g., 'finish-to-start'
 }
 
+// Define a type for the task update payload expected by the API
+// This should align with backend.services.tasks.schemas.TaskUpdate
+export interface ApiTaskUpdatePayload {
+  title?: string | null;
+  description?: string | null;
+  status?: string; // e.g., 'todo', 'in_progress' etc.
+  priority?: string | null;
+  task_type?: string; // e.g., 'task', 'meeting'
+  due_date?: string | null; // ISO date string
+  start_date?: string | null; // ISO datetime string
+  end_date?: string | null; // ISO datetime string
+  duration_minutes?: number | null;
+  project_id?: string | null; // UUID for the project, if moving
+  assignee_ids?: string[] | null; // List of assignee UUIDs
+  depends_on_task_ids?: string[] | null; // List of Task UUIDs this task depends on
+  // dependency_type_for_new is not typically part of update for existing dependencies,
+  // but could be if adding new ones during an update.
+  // For simplicity, let's assume depends_on_task_ids replaces the list,
+  // and new dependencies would need separate handling or a more complex payload.
+}
+
 export const addTask = async (
   token: string | null,
   taskDataForApi: ApiTaskCreatePayload,
@@ -120,167 +141,172 @@ export const addTask = async (
   }
 };
 
-export const updateTask = (
-  task: Task,
-  tasks: Task[],
+export const updateTask = async (
+  token: string | null,
+  taskToUpdate: Partial<Task> & { id: string },
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
-  board: Board,
   setBoard: React.Dispatch<React.SetStateAction<Board>>
-) => {
-  // Placeholder: current logic is local state update
-  console.warn("updateTask is using local state and needs API integration.");
-  // Update in the unified task collection
-  setTasks(prev => prev.map(t => t.id === task.id ? task : t));
+): Promise<Task | null> => {
+  if (!token) {
+    toast.error("Authentication token not available. Please log in.");
+    return null;
+  }
+  if (!taskToUpdate || !taskToUpdate.id) {
+    toast.error("Task data or Task ID is missing for update.");
+    return null;
+  }
+
+  // Construct the API payload
+  const payload: ApiTaskUpdatePayload = {};
+  if (taskToUpdate.title !== undefined) payload.title = taskToUpdate.title;
+  if (taskToUpdate.description !== undefined) payload.description = taskToUpdate.description;
+  if (taskToUpdate.status !== undefined) payload.status = taskToUpdate.status;
+  if (taskToUpdate.priority !== undefined) payload.priority = taskToUpdate.priority;
+  if (taskToUpdate.taskType !== undefined) payload.task_type = taskToUpdate.taskType;
   
-  // Update in Kanban board if task should be in Kanban view
-  if (task.showInKanban !== false) {
-    setBoard((prev) => {
-      // Check if the task status has changed
-      const oldTask = prev.tasks[task.id];
-      const statusChanged = oldTask && oldTask.status !== task.status;
+  if (taskToUpdate.dueDate !== undefined) {
+    payload.due_date = taskToUpdate.dueDate ? 
+      (typeof taskToUpdate.dueDate === 'string' ? taskToUpdate.dueDate.split('T')[0] : new Date(taskToUpdate.dueDate).toISOString().split('T')[0]) 
+      : null;
+  }
+  if (taskToUpdate.startDate !== undefined) {
+    payload.start_date = taskToUpdate.startDate ? 
+      (typeof taskToUpdate.startDate === 'string' ? taskToUpdate.startDate : new Date(taskToUpdate.startDate).toISOString()) 
+      : null;
+  }
+  if (taskToUpdate.endDate !== undefined) {
+    payload.end_date = taskToUpdate.endDate ? 
+      (typeof taskToUpdate.endDate === 'string' ? taskToUpdate.endDate : new Date(taskToUpdate.endDate).toISOString()) 
+      : null;
+  }
+  if (taskToUpdate.duration !== undefined) payload.duration_minutes = taskToUpdate.duration;
+  if (taskToUpdate.project_id !== undefined) payload.project_id = taskToUpdate.project_id; // For moving task
+  
+  if (taskToUpdate.assignees !== undefined) {
+    payload.assignee_ids = taskToUpdate.assignees ? taskToUpdate.assignees.map(a => a.id) : [];
+  }
+  // depends_on_task_ids would be mapped similarly if part of taskToUpdate
+  // For now, not including it in the simplified payload construction
 
-      // First, update the task in the board
-      const updatedTasks = {
-        ...prev.tasks,
-        [task.id]: task,
-      };
+  try {
+    const path = `/tasks/${taskToUpdate.id}`;
+    const updatedTaskFromApi: Task = await fetchApi<Task, ApiTaskUpdatePayload>(
+      path,
+      'PUT',
+      payload,
+      token
+    );
 
-      // If status hasn't changed, just update the task
-      if (!statusChanged) {
+    if (updatedTaskFromApi) {
+      // Update in the unified task collection
+      setTasks(prevTasks => prevTasks.map(t => t.id === updatedTaskFromApi.id ? updatedTaskFromApi : t));
+
+      // Update in Kanban board
+      // The showInKanban logic should ideally come from the API response or be consistent
+      const showInKanban = updatedTaskFromApi.showInKanban !== undefined 
+        ? updatedTaskFromApi.showInKanban 
+        : (updatedTaskFromApi.taskType === 'task');
+
+      if (showInKanban) {
+        setBoard((prevBoard) => {
+          const oldTask = prevBoard.tasks[updatedTaskFromApi.id];
+          const statusChanged = oldTask && oldTask.status !== updatedTaskFromApi.status;
+
+          const newBoardTasks = {
+            ...prevBoard.tasks,
+            [updatedTaskFromApi.id]: updatedTaskFromApi,
+          };
+
+          if (!statusChanged && oldTask) { // Task was already in board and status didn't change
         return {
-          ...prev,
-          tasks: updatedTasks,
+              ...prevBoard,
+              tasks: newBoardTasks,
         };
       }
 
-      // If status has changed, move the task between columns
+          // Determine source and destination columns for status change or new task
       let sourceColumnId = '';
-      let destColumnId = '';
-
-      // Find source column
-      Object.keys(prev.columns).forEach((colId) => {
-        const currentColumn = prev.columns[colId];
-        
-        if (currentColumn.taskIds.includes(task.id)) {
+          if (oldTask) { // If task was already on board, find its column
+            Object.keys(prevBoard.columns).forEach((colId) => {
+              if (prevBoard.columns[colId].taskIds.includes(updatedTaskFromApi.id)) {
           sourceColumnId = colId;
         }
       });
-      
-      // Find destination column based on the new status
-      switch (task.status) {
-        case 'todo':
-          destColumnId = 'column-1';
-          break;
-        case 'in-progress':
-          destColumnId = 'column-2';
-          break;
-        case 'review':
-          destColumnId = 'column-3';
-          break;
-        case 'done':
-        case 'completed':
-          destColumnId = 'column-4';
-          break;
-        default:
-          destColumnId = 'column-1';
-      }
+          }
 
-      if (!sourceColumnId) {
-        // Task wasn't in the board before, add it to the destination column
-        return {
-          ...prev,
-          tasks: updatedTasks,
-          columns: {
-            ...prev.columns,
-            [destColumnId]: {
-              ...prev.columns[destColumnId],
-              taskIds: [...prev.columns[destColumnId].taskIds, task.id],
-            },
-          },
-        };
-      }
+          let destColumnId = 'column-1'; // Default based on new status
+          switch (updatedTaskFromApi.status) {
+            case 'todo': destColumnId = 'column-1'; break;
+            case 'in-progress': destColumnId = 'column-2'; break;
+            case 'review': destColumnId = 'column-3'; break;
+            case 'done': case 'completed': destColumnId = 'column-4'; break;
+            default: destColumnId = 'column-1';
+          }
+          
+          const columnsUpdate = { ...prevBoard.columns };
+          let taskMoved = false;
 
-      if (sourceColumnId === destColumnId) {
-        // Status changed, but it maps to the same column, just update the task
-        return {
-          ...prev,
-          tasks: updatedTasks,
-        };
-      }
+          if (sourceColumnId && sourceColumnId !== destColumnId) {
+            // Remove from source column
+            const sourceCol = columnsUpdate[sourceColumnId];
+            columnsUpdate[sourceColumnId] = {
+              ...sourceCol,
+              taskIds: sourceCol.taskIds.filter(id => id !== updatedTaskFromApi.id),
+            };
+            taskMoved = true;
+          }
 
-      // Remove from source column and add to destination column
-      const sourceColumn = prev.columns[sourceColumnId];
-      const sourceTaskIds = sourceColumn.taskIds.filter((id) => id !== task.id);
-
-      const destColumn = prev.columns[destColumnId];
-      const destTaskIds = [...destColumn.taskIds, task.id];
+          // Add to destination column if not already there or if moved
+          const destCol = columnsUpdate[destColumnId];
+          if (destCol && (!destCol.taskIds.includes(updatedTaskFromApi.id) || taskMoved)) {
+             // Ensure it's not added multiple times if it was already in destCol and status changed
+             const newDestTaskIds = destCol.taskIds.filter(id => id !== updatedTaskFromApi.id);
+             newDestTaskIds.push(updatedTaskFromApi.id); // Add it (again, or for the first time)
+             columnsUpdate[destColumnId] = {
+               ...destCol,
+               taskIds: newDestTaskIds,
+             };
+          } else if (!destCol) {
+            console.warn(`Destination column ${destColumnId} not found in board.`);
+          }
 
       return {
-        ...prev,
-        tasks: updatedTasks,
-        columns: {
-          ...prev.columns,
-          [sourceColumnId]: {
-            ...sourceColumn,
-            taskIds: sourceTaskIds,
-          },
-          [destColumnId]: {
-            ...destColumn,
-            taskIds: destTaskIds,
-          },
-        },
+            ...prevBoard,
+            tasks: newBoardTasks,
+            columns: columnsUpdate,
       };
     });
-  } else {
-    // If task should no longer be in Kanban view, remove it from the board
-    setBoard((prev) => {
-      // Check if the task is in the board
-      const isTaskInBoard = Object.prototype.hasOwnProperty.call(prev.tasks, task.id);
-      
-      if (!isTaskInBoard) {
-        return prev; // Task wasn't in the board, no changes needed
-      }
-      
-      // Find which column contains this task
-      let columnWithTask: Column | null = null;
-      let columnId = '';
+      } else { // Task should not be in Kanban (e.g., type 'meeting' or showInKanban is false)
+        setBoard((prevBoard) => {
+          if (!prevBoard.tasks[updatedTaskFromApi.id]) return prevBoard; // Not in board, nothing to do
 
-      Object.keys(prev.columns).forEach((colId) => {
-        if (prev.columns[colId].taskIds.includes(task.id)) {
-          columnWithTask = prev.columns[colId];
-          columnId = colId;
-        }
-      });
-      
-      if (!columnWithTask) {
-        // Task is in the board tasks but not in any column
-        const { [task.id]: _, ...remainingTasks } = prev.tasks;
+          const { [updatedTaskFromApi.id]: _, ...remainingTasks } = prevBoard.tasks;
+          const newColumns = { ...prevBoard.columns };
+          Object.keys(newColumns).forEach(colId => {
+            newColumns[colId] = {
+              ...newColumns[colId],
+              taskIds: newColumns[colId].taskIds.filter(id => id !== updatedTaskFromApi.id),
+            };
+          });
         return {
-          ...prev,
+            ...prevBoard,
           tasks: remainingTasks,
-        };
-      }
-      
-      // Remove task from column and from board tasks
-      const newTaskIds = columnWithTask.taskIds.filter((id) => id !== task.id);
-      const { [task.id]: _, ...remainingTasks } = prev.tasks;
-      
-      return {
-        ...prev,
-        tasks: remainingTasks,
-        columns: {
-          ...prev.columns,
-          [columnId]: {
-            ...columnWithTask,
-            taskIds: newTaskIds,
-          },
-        },
+            columns: newColumns,
       };
     });
   }
 
-  toast.success('Task updated successfully (local)');
-  return task;
+      toast.success('Task updated successfully!');
+      return updatedTaskFromApi;
+    } else {
+      toast.error('Failed to update task: No data returned from API.');
+      return null;
+    }
+  } catch (error: any) {
+    console.error("Error updating task:", error);
+    toast.error(`Failed to update task: ${error.message || 'Network error'}`);
+    return null;
+  }
 };
 
 export const deleteTask = (

@@ -2,13 +2,14 @@
 from uuid import UUID
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, desc, asc, delete as sqlalchemy_delete
 from datetime import datetime
 
 from backend.core.db import db
 from backend.services.auth.models import User
 from backend.services.projects import schemas
 from backend.services.projects.models import Project, project_members_table
+from backend.core.pagination import PaginatedResponse
 
 # --- Project Services ---
 
@@ -368,3 +369,38 @@ def get_project_members(project_id: UUID, current_user_id: UUID) -> List[schemas
             added_at=added_at_val
         ))
     return result 
+
+def get_projects_paginated(
+    page: int = 1,
+    per_page: int = 10,
+    status: Optional[str] = None,
+    sort_by: str = 'created_at',
+    sort_order: str = 'desc'
+) -> PaginatedResponse[Project]:
+    """Gets a paginated list of all projects for admin view."""
+    query = db.session.query(Project).options(
+        joinedload(Project.owner),
+        selectinload(Project.members)
+    )
+
+    # Apply filters
+    if status:
+        query = query.filter(Project.status == status)
+
+    # Apply sorting
+    sort_column = getattr(Project, sort_by, Project.created_at)
+    if sort_order == 'desc':
+        query = query.order_by(desc(sort_column))
+    else:
+        query = query.order_by(asc(sort_column))
+
+    # Apply pagination
+    total = query.count()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    return PaginatedResponse[Project](
+        items=items,
+        total=total,
+        page=page,
+        per_page=per_page
+    ) 

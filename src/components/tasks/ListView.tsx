@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTaskContext } from '@/contexts/tasks/TaskContext';
-import { TaskDialog } from '@/components/kanban/TaskDialog';
+import { TaskDialog } from '@/components/tasks/TaskEditDialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, Edit, Trash2, Timer } from 'lucide-react';
 import { Task } from '@/types/task';

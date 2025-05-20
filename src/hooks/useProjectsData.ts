@@ -1,8 +1,8 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Project } from "@/types/project";
-import { Task } from "@/types/task";
+import { Task, UserSimple } from "@/types/task";
 import { ensureTaskType, ensureTasksHaveType } from "./useTaskTypeSetter";
 import { operations, components } from '@/services/apiClient';
 import { fetchApi } from '@/contexts/AuthContext';
@@ -37,95 +37,149 @@ export function useProjectsData() {
   const [projects, setProjects] = useState<Project[]>([]);
   const { token } = useAuth();
 
-  // Fetch projects when the component mounts or token changes
-  useEffect(() => {
-    if (token) { // Only fetch if authenticated
-      fetchProjects();
-    } else {
-      setProjects([]); // Clear projects if not authenticated
+  // Wrap fetchProjects with useCallback
+  const fetchProjects = useCallback(async () => {
+    if (!token) {
+      setProjects([]); // Clear projects if no token
+      return;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]); // Dependency array includes token
+    try {
+      const responseData = await fetchApi<operations["listProjects"]["responses"]["200"]["content"]["application/json"]>(
+        "/projects/",
+        "GET",
+        undefined,
+        token
+      );
+      if (responseData) {
+        const fetchedProjects: Project[] = responseData.map(p => {
+          // Map backend members (UserSimpleOutput[]) to frontend members (ProjectUserSimple[])
+          const projectMembers: UserSimple[] = p.members ? p.members.map(m => ({
+            id: m.id || uuidv4(), // Ensure ID exists
+            name: m.name || null,
+            email: m.email || '' 
+          })) : [];
 
-  const getProjectById = (projectId: string): Project | undefined => {
+          return {
+            id: p.id || uuidv4(),
+            name: p.name || 'Untitled',
+            description: p.description || undefined,
+            startDate: p.start_date ? new Date(p.start_date) : new Date(),
+            endDate: p.due_date ? new Date(p.due_date) : undefined, 
+            status: (p.status as Project['status']) || 'planning',
+            priority: (p.priority as Project['priority']) || 'medium',
+            progress: p.progress !== undefined ? p.progress : 0,
+            teamMembers: projectMembers.map(m => m.id), // Keep original teamMembers as array of IDs for now
+            members: projectMembers, // Populate the new members field with full UserSimple objects
+            owner: p.owner ? { 
+              id: p.owner.id || '',
+              name: p.owner.name || undefined,
+              email: p.owner.email || '',
+            } : undefined, // Make owner optional if backend can omit it
+            createdBy: p.owner?.name || 'unknown',
+            createdAt: p.created_at ? new Date(p.created_at) : new Date(),
+            updatedAt: p.updated_at ? new Date(p.updated_at) : new Date(),
+            ownerId: p.owner_id || '',
+            createdById: p.owner_id || '',
+            parentId: p.parent_id || null,
+            path: undefined,
+            level: undefined,
+            subProjects: [],
+            tags: [],
+          };
+        });
+        setProjects(fetchedProjects);
+      } else {
+        setProjects([]);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to fetch projects.");
+      console.error(error);
+      setProjects([]);
+    }
+  }, [token]); // useCallback dependency array includes token
+
+  useEffect(() => {
+    fetchProjects(); // Call the memoized fetchProjects
+  }, [fetchProjects]); // Now this effect correctly depends on the memoized fetchProjects
+
+  const getProjectById = useCallback((projectId: string): Project | undefined => {
     return projects.find(project => project.id === projectId);
-  };
+  }, [projects]);
 
-  const addProject = async (
-    projectData: any // Accept both OpenAPI and frontend form types
+  const addProject = useCallback(async (
+    projectData: any 
   ): Promise<Project | null> => {
     if (!token) {
       toast.error("Authentication token not available. Please log in.");
       return null;
     }
     try {
-      // Prepare payload according to ProjectCreateInput schema
       const payload: Partial<components["schemas"]["ProjectCreateInput"]> = {};
-
       payload.name = projectData.name;
       if (projectData.description) payload.description = projectData.description;
       if (projectData.status) payload.status = projectData.status;
       if (projectData.priority) payload.priority = projectData.priority;
       if (projectData.parentId) payload.parent_id = projectData.parentId;
-      
       if (projectData.startDate && projectData.startDate instanceof Date) {
         payload.start_date = projectData.startDate.toISOString().slice(0, 10);
       }
-      // Backend Pydantic schema ProjectCreate (via ProjectBase) expects 'end_date'
-      // The components["schemas"]["ProjectCreateInput"] might be from an OpenAPI spec expecting 'due_date'.
-      // We send 'end_date' as per Python Pydantic model, and may need to cast payload if TS types mismatch.
       if (projectData.endDate && projectData.endDate instanceof Date) {
         (payload as any).end_date = projectData.endDate.toISOString().slice(0, 10);
       } else if (projectData.endDate === undefined || projectData.endDate === null) {
         (payload as any).end_date = null;
       }
-
       if (projectData.progress !== undefined && typeof projectData.progress === 'number') {
         payload.progress = projectData.progress;
       } else if (typeof projectData.progress === 'string') {
         payload.progress = parseInt(projectData.progress, 10) || 0;
       } else {
-        payload.progress = 0; // Default if not provided or invalid
+        payload.progress = 0;
       }
-
       if (projectData.teamMembers && Array.isArray(projectData.teamMembers)) {
-        payload.team_member_ids = projectData.teamMembers; // Assuming teamMembers from dialog is already array of IDs
+        payload.team_member_ids = projectData.teamMembers;
       }
 
       const responseData = await fetchApi<components["schemas"]["ProjectOutput"], components["schemas"]["ProjectCreateInput"]>(
         "/projects/",
         "POST",
-        payload as components["schemas"]["ProjectCreateInput"], // Cast to ensure type checking
+        payload as components["schemas"]["ProjectCreateInput"],
         token
       );
 
       if (responseData) {
-        const backendProject = responseData; // Typed as ProjectOutput
+        const backendProject = responseData;
+        const projectMembers: UserSimple[] = backendProject.members ? backendProject.members.map(m => ({
+            id: m.id || uuidv4(),
+            name: m.name || null,
+            email: m.email || '' 
+          })) : [];
+
         const newProject: Project = {
           id: backendProject.id || uuidv4(),
           name: backendProject.name || 'Untitled Project',
           description: backendProject.description || undefined,
           startDate: backendProject.start_date ? new Date(backendProject.start_date) : new Date(),
-          endDate: backendProject.due_date ? new Date(backendProject.due_date) : undefined, // from API's due_date
+          endDate: backendProject.due_date ? new Date(backendProject.due_date) : undefined,
           status: (backendProject.status as Project['status']) || 'planning',
           priority: (backendProject.priority as Project['priority']) || 'medium',
           progress: backendProject.progress !== undefined ? backendProject.progress : 0,
-          teamMembers: backendProject.members ? backendProject.members.map(member => member.id || '').filter(id => id) : [],
-          owner: backendProject.owner ? { // Correctly map owner object
+          teamMembers: projectMembers.map(m => m.id), // Keep as IDs
+          members: projectMembers, // Add full member objects
+          owner: backendProject.owner ? { 
             id: backendProject.owner.id || '',
             name: backendProject.owner.name || undefined,
             email: backendProject.owner.email || '',
-          } : { id: '', email: '', name: undefined }, // Default UserSimple if owner is missing
-          createdBy: backendProject.owner?.name || 'unknown',
+          } : undefined,
+          createdBy: backendProject.owner?.name || 'unknown', 
           createdAt: backendProject.created_at ? new Date(backendProject.created_at) : new Date(),
           updatedAt: backendProject.updated_at ? new Date(backendProject.updated_at) : new Date(),
-          ownerId: backendProject.owner_id || '',
+          ownerId: backendProject.owner_id || '', 
           createdById: backendProject.owner_id || '',
-          parentId: backendProject.parent_id || null,
-          path: undefined,
-          level: undefined,
-          subProjects: [],
-          tags: [],
+          parentId: backendProject.parent_id || null, 
+          path: undefined, 
+          level: undefined, 
+          subProjects: [], 
+          tags: [], 
         };
         setProjects(prevProjects => [...prevProjects, newProject]);
         toast.success(`Project "${newProject.name}" created successfully!`);
@@ -140,127 +194,71 @@ export function useProjectsData() {
       toast.error(error.message || "An unexpected error occurred while creating the project.");
       return null;
     }
-  };
+  }, [token, setProjects]); // Added setProjects to dependency array as it's used for state update
 
-  const fetchProjects = async () => {
-    if (!token) return;
-    try {
-      const responseData = await fetchApi<operations["listProjects"]["responses"]["200"]["content"]["application/json"]>(
-        "/projects/",
-        "GET",
-        undefined,
-        token
-      );
-      if (responseData) {
-        const fetchedProjects: Project[] = responseData.map(p => ({ // p is ProjectOutput
-          id: p.id || uuidv4(),
-          name: p.name || 'Untitled',
-          description: p.description || undefined,
-          startDate: p.start_date ? new Date(p.start_date) : new Date(),
-          endDate: p.due_date ? new Date(p.due_date) : undefined, // from API's due_date
-          status: (p.status as Project['status']) || 'planning',
-          priority: (p.priority as Project['priority']) || 'medium',
-          progress: p.progress !== undefined ? p.progress : 0,
-          teamMembers: p.members ? p.members.map(member => member.id || '').filter(id => id) : [],
-          owner: p.owner ? { // Correctly map owner object
-            id: p.owner.id || '',
-            name: p.owner.name || undefined,
-            email: p.owner.email || '',
-          } : { id: '', email: '', name: undefined }, // Default UserSimple
-          createdBy: p.owner?.name || 'unknown',
-          createdAt: p.created_at ? new Date(p.created_at) : new Date(),
-          updatedAt: p.updated_at ? new Date(p.updated_at) : new Date(),
-          ownerId: p.owner_id || '',
-          createdById: p.owner_id || '',
-          parentId: p.parent_id || null,
-          path: undefined,
-          level: undefined,
-          subProjects: [],
-          tags: [],
-        }));
-        setProjects(fetchedProjects);
-      } else {
-        setProjects([]);
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to fetch projects.");
-      console.error(error);
-      setProjects([]);
-    }
-  };
-
-  const updateProject = async (updatedProjectData: any, projectId: string): Promise<Project | null> => {
+  const updateProject = useCallback(async (updatedProjectData: any, projectId: string): Promise<Project | null> => {
     if (!token) {
       toast.error("Authentication token not available. Please log in.");
       return null;
     }
     try {
-      // Prepare payload according to ProjectUpdateInput schema
       const payload: Partial<components["schemas"]["ProjectUpdateInput"]> = {};
-
-      // Only include fields if they are provided in updatedProjectData
-      if (updatedProjectData.name !== undefined) payload.name = updatedProjectData.name;
-      if (updatedProjectData.description !== undefined) payload.description = updatedProjectData.description;
-      if (updatedProjectData.status !== undefined) payload.status = updatedProjectData.status;
-      if (updatedProjectData.priority !== undefined) payload.priority = updatedProjectData.priority;
-      if (updatedProjectData.parentId !== undefined) payload.parent_id = updatedProjectData.parentId;
-
-      if (updatedProjectData.startDate !== undefined) {
-        payload.start_date = updatedProjectData.startDate instanceof Date 
-          ? updatedProjectData.startDate.toISOString().slice(0, 10) 
-          : updatedProjectData.startDate;
+      if (updatedProjectData.name) payload.name = updatedProjectData.name;
+      if (updatedProjectData.description) payload.description = updatedProjectData.description;
+      if (updatedProjectData.status) payload.status = updatedProjectData.status;
+      if (updatedProjectData.priority) payload.priority = updatedProjectData.priority;
+      if (updatedProjectData.parentId) payload.parent_id = updatedProjectData.parentId;
+      if (updatedProjectData.startDate && updatedProjectData.startDate instanceof Date) {
+        payload.start_date = updatedProjectData.startDate.toISOString().slice(0, 10);
       }
-      // Backend Pydantic schema ProjectUpdate expects 'end_date'.
-      // The components["schemas"]["ProjectUpdateInput"] might be from an OpenAPI spec expecting 'due_date'.
-      // We send 'end_date' as per Python Pydantic model, and may need to cast payload if TS types mismatch.
-      if (updatedProjectData.endDate !== undefined) {
-        (payload as any).end_date = updatedProjectData.endDate instanceof Date 
-          ? updatedProjectData.endDate.toISOString().slice(0, 10) 
-          : (updatedProjectData.endDate === null ? null : updatedProjectData.endDate);
+      if (updatedProjectData.endDate && updatedProjectData.endDate instanceof Date) {
+        (payload as any).end_date = updatedProjectData.endDate.toISOString().slice(0, 10); 
+      } else if (updatedProjectData.endDate === null) {
+        (payload as any).end_date = null;
+      }
+      if (updatedProjectData.progress !== undefined && typeof updatedProjectData.progress === 'number') {
+        payload.progress = updatedProjectData.progress;
+      }
+      if (updatedProjectData.teamMembers && Array.isArray(updatedProjectData.teamMembers)) {
+        (payload as any).team_member_ids = updatedProjectData.teamMembers;
       }
 
-      if (updatedProjectData.progress !== undefined) {
-         payload.progress = typeof updatedProjectData.progress === 'string' 
-            ? parseInt(updatedProjectData.progress, 10) 
-            : updatedProjectData.progress;
-         if (isNaN(payload.progress as number)) payload.progress = 0; // default if parse failed
-      }
-
-      if (updatedProjectData.teamMembers !== undefined && Array.isArray(updatedProjectData.teamMembers)) {
-        payload.team_member_ids = updatedProjectData.teamMembers; // Assuming teamMembers is array of IDs
-      }
-      
-      console.log("[useProjectsData] Updating project. Payload:", JSON.stringify(payload, null, 2)); // DEBUG
-
-      const responseData = await fetchApi<components["schemas"]["ProjectOutput"], components["schemas"]["ProjectUpdateInput"]>(
+      const responseData = await fetchApi<components["schemas"]["ProjectOutput"], Partial<components["schemas"]["ProjectUpdateInput"]>>(
         `/projects/${projectId}`,
         "PUT",
-        payload as components["schemas"]["ProjectUpdateInput"], // Cast to ensure type checking
+        payload,
         token
       );
 
       if (responseData) {
-        const backendProject = responseData; // Typed as ProjectOutput
+        const backendProject = responseData;
         const existingProject = projects.find(p => p.id === projectId);
+        
+        const projectMembers: UserSimple[] = backendProject.members ? backendProject.members.map(m => ({
+            id: m.id || uuidv4(),
+            name: m.name || null,
+            email: m.email || '' 
+          })) : (existingProject?.members || []); // Fallback to existing members if API doesn't return them on PUT
 
         const updatedProject: Project = {
           ...(existingProject || {} as Project),
           id: backendProject.id || projectId,
           name: backendProject.name || existingProject?.name || 'Untitled Project',
           description: backendProject.description !== undefined ? backendProject.description : existingProject?.description,
-          startDate: backendProject.start_date ? new Date(backendProject.start_date) : (existingProject?.startDate || new Date()),
-          endDate: backendProject.due_date ? new Date(backendProject.due_date) : (backendProject.due_date === null ? undefined : existingProject?.endDate), // from API's due_date
+          startDate: backendProject.start_date ? new Date(backendProject.start_date) : existingProject?.startDate || new Date(),
+          endDate: backendProject.due_date ? new Date(backendProject.due_date) : existingProject?.endDate,
           status: (backendProject.status as Project['status']) || existingProject?.status || 'planning',
           priority: (backendProject.priority as Project['priority']) || existingProject?.priority || 'medium',
-          progress: backendProject.progress !== undefined ? backendProject.progress : (existingProject?.progress || 0),
-          teamMembers: backendProject.members ? backendProject.members.map(member => member.id || '').filter(id => id) : (existingProject?.teamMembers || []),
-          owner: backendProject.owner ? { // Correctly map owner object
+          progress: backendProject.progress !== undefined ? backendProject.progress : existingProject?.progress || 0,
+          teamMembers: projectMembers.map(m => m.id), // Keep as IDs
+          members: projectMembers, // Add full member objects
+          owner: backendProject.owner ? { 
             id: backendProject.owner.id || '',
             name: backendProject.owner.name || undefined,
             email: backendProject.owner.email || '',
-          } : (existingProject?.owner || { id: '', email: '', name: undefined }), // Fallback to existing or default
+          } : existingProject?.owner, // Fallback to existing owner
           createdBy: backendProject.owner?.name || existingProject?.createdBy || 'unknown',
-          createdAt: existingProject?.createdAt || (backendProject.created_at ? new Date(backendProject.created_at) : new Date()),
+          createdAt: backendProject.created_at ? new Date(backendProject.created_at) : existingProject?.createdAt || new Date(),
           updatedAt: backendProject.updated_at ? new Date(backendProject.updated_at) : new Date(),
           ownerId: backendProject.owner_id || existingProject?.ownerId || '',
           createdById: backendProject.owner_id || existingProject?.createdById || '',
@@ -284,7 +282,7 @@ export function useProjectsData() {
       console.error(error);
       return null;
     }
-  };
+  }, [token, projects, setProjects]); // Added projects and setProjects to dependency array
 
   const deleteProject = async (projectId: string): Promise<boolean> => {
     if (!token) {

@@ -6,6 +6,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,7 +76,7 @@ const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   taskType: z.enum(["task", "meeting"]),
-  status: z.enum(["todo", "in-progress", "review", "done", "completed"]),
+  status: z.enum(["todo", "in_progress", "review", "done", "completed"]),
   priority: z.enum(["low", "medium", "high"]).optional(),
   dueDate: z.date().nullable().optional(),
   projectId: z.string().min(1, "Project is required"),
@@ -120,7 +121,7 @@ export function TaskDialog({
       status: "todo",
       priority: "medium",
       dueDate: null,
-      projectId: "",
+      projectId: undefined,
       assignees: [],
       date: initialDate ? format(initialDate, "yyyy-MM-dd") : undefined,
       time: undefined,
@@ -214,10 +215,14 @@ export function TaskDialog({
         title: editingTask.title,
         description: editingTask.description || "",
         taskType: editingTask.taskType || taskType,
-        status: editingTask.status as any,
-        priority: editingTask.priority || "medium",
+        status: editingTask.status && ["todo", "in_progress", "review", "done", "completed"].includes(editingTask.status) 
+                  ? editingTask.status 
+                  : "todo", // Default if status is invalid or empty
+        priority: editingTask.priority && ["low", "medium", "high"].includes(editingTask.priority) 
+                    ? editingTask.priority 
+                    : "medium", // Default if priority is invalid or empty
         dueDate: editingTask.dueDate ? (typeof editingTask.dueDate === 'string' ? parseISO(editingTask.dueDate) : editingTask.dueDate) : null,
-        projectId: editingTask.project_id,
+        projectId: editingTask.project_id && editingTask.project_id !== "" ? editingTask.project_id : undefined, // Fallback to undefined for empty string
         assignees: editingTask.assignees ? editingTask.assignees.map(a => a.id) : [],
         date: editingTask.date || "",
         time: editingTask.time || "",
@@ -250,39 +255,72 @@ export function TaskDialog({
 
   const onSubmit = async (data: TaskFormValues) => {
     if (editingTask) {
-      // Logic for updating an existing task (to be reviewed separately)
+      // Logic for updating an existing task
       const project = availableProjects.find(p => p.id === data.projectId);
       const projectName = project ? project.name : "Unknown Project";
-      const taskData: Partial<Task> = {
+      
+      // Construct taskData aligning with Partial<Task> & { id: string }
+      // Ensure all relevant fields from 'data' are mapped to 'Task' fields
+      const taskDataForUpdate: Partial<Task> & { id: string } = {
+        id: editingTask.id,
         title: data.title,
         description: data.description,
         status: data.status,
-        priority: data.priority,
+        priority: data.priority || null, // Ensure null if undefined
         taskType: data.taskType,
         project_id: data.projectId,
-        project: { id: data.projectId || '', name: projectName },
-        assignees: [],
-        dependencies: [],
-        dependencyType: data.dependencyType,
+        // project: { id: data.projectId || '', name: projectName }, // This is derived, API expects project_id
+        assignees: data.assignees ? data.assignees.map(id => {
+          const member = projectMembers.find(m => m.id === id);
+          return { id: id, name: member?.name || 'Unknown', email: member?.email || '' };
+        }) : [],
+        dependencies: data.dependencies ? data.dependencies.map(id => {
+          const depTask = allTasks.find(t => t.id === id);
+          return { id: id, title: depTask?.title || 'Unknown Task', status: depTask?.status || 'todo' };
+        }) : [],
+        dependencyType: data.dependencyType || null, // Ensure null if undefined
       };
+
       if (data.taskType === "task") {
-        taskData.dueDate = data.dueDate || new Date();
+        taskDataForUpdate.dueDate = data.dueDate; // Should be Date object or null from form
       } else {
-        taskData.date = data.date;
-        taskData.time = data.time;
-        taskData.duration = data.duration;
+        // For meetings, backend might expect start_date, end_date, duration_minutes
+        // These are handled by ApiTaskUpdatePayload in taskActions.ts
+        // Here, we are constructing a Partial<Task> for the context, which might be slightly different.
+        // The taskActions.ts will map this to the correct API payload.
+        taskDataForUpdate.startDate = data.date && data.time ? parseISO(`${data.date}T${data.time}:00`) : null;
+        taskDataForUpdate.duration = data.duration;
+        if (taskDataForUpdate.startDate && data.duration) {
+          taskDataForUpdate.endDate = addMinutes(taskDataForUpdate.startDate, data.duration);
+        }
       }
-      taskData.showInKanban = data.taskType === "task";
-      taskData.showInTimeline = data.taskType === "meeting";
-      
-      updateTask({ id: editingTask.id, ...taskData } as Task);
-      toast.success("Task updated successfully (local - API call pending)");
-      
-      if (onSave) {
-        onSave({ id: editingTask.id, ...taskData } as Task);
-      } else {
-        onClose();
-        navigate(`/tasks/${editingTask.id}`);
+      // showInKanban/Timeline are local display properties, not typically sent in update payload for all fields.
+      // The API response will be the source of truth for the updated task.
+
+      try {
+        // No longer need to get setTasks/setBoard from context here
+        // const contextSetTasks = getAllTasks.length > 0 ? (useTaskContext()).setTasks : () => {}; 
+        // const contextSetBoard = (useTaskContext()).setBoard;
+        
+        // Call the updateTask from useTaskContext() directly
+        // It now handles the API call and context updates internally
+        const updatedTaskResult = await updateTask(taskDataForUpdate); // Pass only taskDataForUpdate
+        
+        if (updatedTaskResult) { // updateTask now returns the updated task or null
+          toast.success("Task updated successfully!"); // Context updateTask already toasts, but this is fine for now
+          if (onSave) {
+            onSave(updatedTaskResult);
+          } else if (standalone) {
+            navigate(`/tasks/${editingTask.id}`); // Or to a relevant list page
+          } else {
+            onClose();
+          }
+        } else {
+          // toast.error("Failed to update task. Please try again."); // updateTask action already toasts
+        }
+      } catch (error: any) {
+        console.error("Error in onSubmit calling updateTask:", error);
+        toast.error(`Error updating task: ${error.message || 'Unknown error'}`);
       }
 
     } else {
@@ -327,7 +365,13 @@ export function TaskDialog({
             onSave(createdTask); // Pass the task returned from API
           } else {
             onClose();
-            navigate(`/tasks/${createdTask.id}`); // Navigate using ID from API response
+            // Ensure createdTask.id exists before navigating
+            if (createdTask.id) {
+              navigate(`/tasks/${createdTask.id}`); // Navigate using ID from API response
+            } else {
+              console.warn("Created task does not have an ID. Cannot navigate.");
+              onClose(); // Fallback to closing dialog
+            }
           }
         } else {
           // addTask might return null if API call fails or validation within action fails
@@ -345,6 +389,9 @@ export function TaskDialog({
       <DialogContent className={cn("sm:max-w-[600px] max-h-[90vh] overflow-y-auto", standalone ? "p-6 border max-w-3xl mx-auto" : "")}>
         <DialogHeader>
           <DialogTitle>{editingTask ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+          <DialogDescription>
+            {editingTask ? 'Update the details of your existing task.' : 'Fill in the details to create a new task.'}
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
@@ -426,8 +473,8 @@ export function TaskDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {availableProjects.length === 0 && <SelectItem value="" disabled>Loading projects...</SelectItem>}
-                      {availableProjects.map(project => (
+                      {availableProjects.length === 0 && <SelectItem value="loading" disabled>Loading projects...</SelectItem>}
+                      {availableProjects.filter(p => p.id !== "").map(project => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
                         </SelectItem>
@@ -457,7 +504,7 @@ export function TaskDialog({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="todo">To Do</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="review">Review</SelectItem>
                       <SelectItem value="done">Done</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
@@ -622,7 +669,7 @@ export function TaskDialog({
                       <SelectContent>
                         {isLoadingMembers && <SelectItem value="loading" disabled>Loading...</SelectItem>}
                         {!isLoadingMembers && projectMembers.length === 0 && <SelectItem value="no-members" disabled>No members in project or project not selected</SelectItem>}
-                        {projectMembers.map((member) => (
+                        {projectMembers.filter(m => m.id && m.id !== "").map((member) => (
                           <SelectItem key={member.id} value={member.id}>
                             {member.name || member.email}
                           </SelectItem>
