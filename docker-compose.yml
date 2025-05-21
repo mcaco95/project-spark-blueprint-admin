@@ -1,6 +1,17 @@
-version: '3.8'
-
 services:
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - web
+
+  # Backend service
   web:
     build: 
       context: ./backend
@@ -11,6 +22,7 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/app_db
       - FLASK_APP=app.py
       - FLASK_ENV=development
+      - BACKEND_CORS_ORIGINS=http://localhost
     depends_on:
       - db
     volumes:
@@ -19,6 +31,7 @@ services:
       sh -c "python init_db.py &&
              gunicorn --bind 0.0.0.0:5000 wsgi:application --reload"
 
+  # Database service
   db:
     image: postgres:15
     volumes:
