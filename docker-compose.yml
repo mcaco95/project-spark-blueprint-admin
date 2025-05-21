@@ -22,7 +22,7 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/app_db
       - FLASK_APP=app.py
       - FLASK_ENV=development
-      - BACKEND_CORS_ORIGINS=http://localhost
+      - BACKEND_CORS_ORIGINS=http://localhost,http://5.161.185.159
     depends_on:
       - db
     volumes:
