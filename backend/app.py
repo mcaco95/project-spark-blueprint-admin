@@ -105,7 +105,7 @@ def create_app(config_object=settings):
     # Enable CORS for all origins with proper preflight handling
     CORS(app, resources={
         r"/*": {
-            "origins": settings.BACKEND_CORS_ORIGINS.split(",") if isinstance(settings.BACKEND_CORS_ORIGINS, str) else ["*"],
+            "origins": ["http://localhost", "http://5.161.185.159"],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
             "expose_headers": ["Content-Type", "Authorization"],
@@ -113,16 +113,6 @@ def create_app(config_object=settings):
             "send_wildcard": False
         }
     })
-
-    # Add CORS headers to all responses
-    @app.after_request
-    def after_request(response):
-        if request.method == 'OPTIONS':
-            response.headers["Access-Control-Allow-Origin"] = settings.BACKEND_CORS_ORIGINS
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-        return response
 
     # Initialize Flask-RESTX Api with the Flask app
     api.init_app(app)

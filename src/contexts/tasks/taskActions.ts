@@ -94,7 +94,7 @@ export const addTask = async (
         let targetColumnId = 'column-1'; // Default based on status
         switch (createdTaskFromApi.status) {
           case 'todo': targetColumnId = 'column-1'; break;
-          case 'in-progress': targetColumnId = 'column-2'; break;
+          case 'in_progress': targetColumnId = 'column-2'; break;
           case 'review': targetColumnId = 'column-3'; break;
           case 'done':
           case 'completed': targetColumnId = 'column-4'; break;
@@ -237,7 +237,7 @@ export const updateTask = async (
           let destColumnId = 'column-1'; // Default based on new status
           switch (updatedTaskFromApi.status) {
             case 'todo': destColumnId = 'column-1'; break;
-            case 'in-progress': destColumnId = 'column-2'; break;
+            case 'in_progress': destColumnId = 'column-2'; break;
             case 'review': destColumnId = 'column-3'; break;
             case 'done': case 'completed': destColumnId = 'column-4'; break;
             default: destColumnId = 'column-1';
@@ -309,128 +309,118 @@ export const updateTask = async (
   }
 };
 
-export const deleteTask = (
+export const deleteTask = async (
+  token: string | null,
   taskId: string,
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   setBoard: React.Dispatch<React.SetStateAction<Board>>
-) => {
-  console.warn("deleteTask is using local state and needs API integration.");
-  // Remove from unified task collection
-  setTasks(prev => prev.filter(t => t.id !== taskId));
-  
-  // Remove from Kanban board if present
-  setBoard((prev) => {
-    // Check if the task is in the board
-    const isTaskInBoard = Object.prototype.hasOwnProperty.call(prev.tasks, taskId);
-    
-    if (!isTaskInBoard) {
-      return prev; // Task wasn't in the board, no changes needed
-    }
-    
-    // Find which column contains this task
-    let columnWithTask: Column | null = null;
-    let columnId = '';
+): Promise<boolean> => {
+  if (!token) {
+    toast.error("Authentication token not available. Please log in.");
+    return false;
+  }
 
-    Object.keys(prev.columns).forEach((colId) => {
-      if (prev.columns[colId].taskIds.includes(taskId)) {
-        columnWithTask = prev.columns[colId];
-        columnId = colId;
-      }
-    });
+  try {
+    const path = `/tasks/${taskId}`;
+    await fetchApi(path, 'DELETE', null, token);
+
+    // If API call succeeds, update local state
+    setTasks(prev => prev.filter(t => t.id !== taskId));
     
-    if (!columnWithTask) {
-      // Task is in the board tasks but not in any column
+    setBoard((prev) => {
+      const isTaskInBoard = Object.prototype.hasOwnProperty.call(prev.tasks, taskId);
+      if (!isTaskInBoard) {
+        return prev;
+      }
+      let columnWithTask: Column | null = null;
+      let columnId = '';
+      Object.keys(prev.columns).forEach((colId) => {
+        if (prev.columns[colId].taskIds.includes(taskId)) {
+          columnWithTask = prev.columns[colId];
+          columnId = colId;
+        }
+      });
+      if (!columnWithTask) {
+        const { [taskId]: _, ...remainingTasks } = prev.tasks;
+        return {
+          ...prev,
+          tasks: remainingTasks,
+        };
+      }
+      const newTaskIds = columnWithTask.taskIds.filter((id) => id !== taskId);
       const { [taskId]: _, ...remainingTasks } = prev.tasks;
       return {
         ...prev,
         tasks: remainingTasks,
-      };
-    }
-    
-    // Remove task from column and from board tasks
-    const newTaskIds = columnWithTask.taskIds.filter((id) => id !== taskId);
-    const { [taskId]: _, ...remainingTasks } = prev.tasks;
-    
-    return {
-      ...prev,
-      tasks: remainingTasks,
-      columns: {
-        ...prev.columns,
-        [columnId]: {
-          ...columnWithTask,
-          taskIds: newTaskIds,
+        columns: {
+          ...prev.columns,
+          [columnId]: {
+            ...columnWithTask,
+            taskIds: newTaskIds,
+          },
         },
-      },
-    };
-  });
+      };
+    });
 
-  toast.success('Task deleted successfully (local)');
+    toast.success('Task deleted successfully');
+    return true;
+  } catch (error: any) {
+    console.error("Error deleting task:", error);
+    toast.error(`Failed to delete task: ${error.message || 'Network error'}`);
+    return false;
+  }
 };
 
-export const moveTask = (
-  taskId: string, 
-  sourceColId: string, 
-  destColId: string, 
-  newIndex = 0,
-  board: Board,
-  setBoard: React.Dispatch<React.SetStateAction<Board>>,
-  setTasks: React.Dispatch<React.SetStateAction<Task[]>>
+export const moveTaskOnKanban = async (
+  taskId: string,
+  sourceColId: string, // Keep for potential logging or more complex logic later
+  destColId: string,
+  boardColumns: Record<string, Column>, // Pass current board columns to map destColId to status
+  currentTask: Task | undefined,
+  token: string | null,
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
+  setBoard: React.Dispatch<React.SetStateAction<Board>>
 ) => {
-  console.warn("moveTask is using local state and needs API integration.");
-  setBoard((prev) => {
-    // No need to move if source and destination are the same
-    if (sourceColId === destColId && newIndex === prev.columns[sourceColId].taskIds.indexOf(taskId)) {
-      return prev;
-    }
+  if (!currentTask) {
+    toast.error("Task details not found for moving.");
+    return;
+  }
+  if (!token) {
+    toast.error("Authentication required to move task.");
+    return;
+  }
 
-    // Remove from source column
-    const sourceTaskIds = [...prev.columns[sourceColId].taskIds];
-    sourceTaskIds.splice(sourceTaskIds.indexOf(taskId), 1);
+  const destColumn = boardColumns[destColId];
+  if (!destColumn) {
+    toast.error("Destination column not found.");
+    return;
+  }
 
-    // Add to destination column at the specified index
-    const destTaskIds = [...prev.columns[destColId].taskIds];
-    destTaskIds.splice(newIndex, 0, taskId);
+  let newStatus: Task['status'] = currentTask.status; // Default to current status
 
-    // Update task status if needed
-    const task = prev.tasks[taskId];
-    let updatedTask = task;
+  const title = destColumn.title.toLowerCase();
+  if (title === 'to do') {
+    newStatus = 'todo';
+  } else if (title === 'in progress' || title === 'in-progress' || title === 'in_progress') {
+    newStatus = 'in_progress'; // Always use underscore version for the API
+  } else if (title === 'review') {
+    newStatus = 'review';
+  } else if (title === 'done' || title === 'completed') {
+    newStatus = 'completed';
+  }
 
-    // Map column to status
-    const destColumn = prev.columns[destColId];
-    if (destColumn.title.toLowerCase() === 'to do') {
-      updatedTask = { ...task, status: 'todo' };
-    } else if (destColumn.title.toLowerCase() === 'in progress') {
-      updatedTask = { ...task, status: 'in-progress' };
-    } else if (destColumn.title.toLowerCase() === 'review') {
-      updatedTask = { ...task, status: 'review' };
-    } else if (destColumn.title.toLowerCase() === 'done') {
-      updatedTask = { ...task, status: 'done' };
-    }
+  if (newStatus === currentTask.status) {
+    console.log("Task moved to a column with the same status or status not changed.");
+    // If only reordering within the same column, that logic would be separate
+    // and might not need an API call if the backend doesn't track order within status.
+    // For now, this function primarily handles status changes due to column moves.
+    return; 
+  }
 
-    // Also update the task in the unified collection
-    setTasks(prevTasks => 
-      prevTasks.map(t => 
-        t.id === taskId ? { ...t, status: updatedTask.status } : t
-      )
-    );
-
-    return {
-      ...prev,
-      tasks: {
-        ...prev.tasks,
-        [taskId]: updatedTask,
-      },
-      columns: {
-        ...prev.columns,
-        [sourceColId]: {
-          ...prev.columns[sourceColId],
-          taskIds: sourceTaskIds,
-        },
-        [destColId]: {
-          ...prev.columns[destColId],
-          taskIds: destTaskIds,
-        },
-      },
-    };
-  });
+  await updateTask(
+    token,
+    { id: taskId, status: newStatus },
+    setTasks,
+    setBoard
+  );
 };

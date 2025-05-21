@@ -10,7 +10,7 @@ import { usePomodoroContext } from '@/contexts/PomodoroContext';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { format, parse } from 'date-fns';
+import { format, parse, parseISO, isValid } from 'date-fns';
 
 interface TaskCardProps {
   task: Task;
@@ -80,11 +80,22 @@ export function TaskCard({ task, isDragging, onEdit }: TaskCardProps) {
       // If it's already a Date object, use it. If it's a string, parse it.
       // Backend sends date as "YYYY-MM-DD" for dueDate.
       // Backend might send full ISO for meeting dates (task.date / task.startDate)
-      const dateObj = typeof dateInput === 'string' ? (dateInput.includes('T') ? new Date(dateInput) : parse(dateInput, 'yyyy-MM-dd', new Date())) : dateInput;
+      const dateObj = typeof dateInput === 'string' 
+        ? (dateInput.includes('T') 
+          ? parseISO(dateInput) 
+          : parse(dateInput, 'yyyy-MM-dd', new Date()))
+        : dateInput;
+      
+      // Ensure we're working with a valid date
+      if (!isValid(dateObj)) {
+        console.error("Invalid date in TaskCard:", dateInput);
+        return '';
+      }
+      
       return format(dateObj, formatString);
     } catch (e) {
       console.error("Error formatting date in TaskCard:", dateInput, e);
-      return String(dateInput); // Fallback
+      return ''; // Return empty string instead of potentially invalid date string
     }
   };
 

@@ -102,13 +102,26 @@ export function ProjectDialog({ isOpen, onClose, editingProject, onSave, project
     if (isOpen) { // Reset/populate form only when dialog becomes visible or editingProject changes
       if (editingProject) {
         const initialMemberIds = editingProject.teamMembers || []; // Assuming teamMembers are IDs
+        
+        // Convert dates from UTC to local time
+        const convertToLocalDate = (dateInput: Date | string | undefined | null) => {
+          if (!dateInput) return undefined;
+          const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+          return new Date(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            12 // Set to noon to avoid any timezone issues
+          );
+        };
+
         form.reset({
           name: editingProject.name,
           description: editingProject.description || '',
           status: editingProject.status,
           priority: editingProject.priority,
-          startDate: editingProject.startDate ? new Date(editingProject.startDate) : new Date(),
-          dueDate: editingProject.endDate ? new Date(editingProject.endDate) : undefined,
+          startDate: convertToLocalDate(editingProject.startDate) || new Date(),
+          dueDate: convertToLocalDate(editingProject.endDate),
           progress: editingProject.progress,
           teamMembers: initialMemberIds, // Store IDs in form
           parentId: editingProject.parentId || null,

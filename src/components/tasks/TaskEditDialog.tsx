@@ -207,49 +207,52 @@ export function TaskDialog({
 
   // Reset form or populate with task data when opening
   useEffect(() => {
-    if (isOpen && editingTask) {
-      // Determine if this is a task or meeting based on existing data
-      const taskType = editingTask.date && editingTask.time ? "meeting" : "task";
-      
-      form.reset({
-        title: editingTask.title,
-        description: editingTask.description || "",
-        taskType: editingTask.taskType || taskType,
-        status: editingTask.status && ["todo", "in_progress", "review", "done", "completed"].includes(editingTask.status) 
-                  ? editingTask.status 
-                  : "todo", // Default if status is invalid or empty
-        priority: editingTask.priority && ["low", "medium", "high"].includes(editingTask.priority) 
-                    ? editingTask.priority 
-                    : "medium", // Default if priority is invalid or empty
-        dueDate: editingTask.dueDate ? (typeof editingTask.dueDate === 'string' ? parseISO(editingTask.dueDate) : editingTask.dueDate) : null,
-        projectId: editingTask.project_id && editingTask.project_id !== "" ? editingTask.project_id : undefined, // Fallback to undefined for empty string
-        assignees: editingTask.assignees ? editingTask.assignees.map(a => a.id) : [],
-        date: editingTask.date || "",
-        time: editingTask.time || "",
-        duration: editingTask.duration || 30,
-        dependencies: editingTask.dependencies ? editingTask.dependencies.map(d => d.id) : [],
-        dependencyType: editingTask.dependencyType || "finish-to-start",
-      });
-    } else if (isOpen) {
-      form.reset({
-        title: "",
-        description: "",
-        taskType: "task", // Default to regular task
-        status: "todo",
-        priority: "medium",
-        dueDate: null,
-        projectId: defaultProject && availableProjects.some(p => p.id === defaultProject) 
+    if (isOpen) {
+      if (editingTask) {
+        // Determine if this is a task or meeting based on existing data
+        const taskType = editingTask.date && editingTask.time ? "meeting" : "task";
+        
+        form.reset({
+          title: editingTask.title,
+          description: editingTask.description || "",
+          taskType: editingTask.taskType || taskType,
+          status: editingTask.status && ["todo", "in_progress", "review", "done", "completed"].includes(editingTask.status) 
+                    ? editingTask.status 
+                    : "todo",
+          priority: editingTask.priority && ["low", "medium", "high"].includes(editingTask.priority) 
+                      ? editingTask.priority 
+                      : "medium",
+          dueDate: editingTask.dueDate ? (typeof editingTask.dueDate === 'string' ? parseISO(editingTask.dueDate) : editingTask.dueDate) : null,
+          projectId: editingTask.project_id && editingTask.project_id !== "" ? editingTask.project_id : undefined,
+          assignees: editingTask.assignees ? editingTask.assignees.map(a => a.id) : [],
+          date: editingTask.date || "",
+          time: editingTask.time || "",
+          duration: editingTask.duration || 30,
+          dependencies: editingTask.dependencies ? editingTask.dependencies.map(d => d.id) : [],
+          dependencyType: editingTask.dependencyType || "finish-to-start",
+        });
+      } else {
+        // Creating a new task
+        form.reset({
+          title: "",
+          description: "",
+          taskType: "task",
+          status: "todo",
+          priority: "medium",
+          dueDate: initialDate || null,
+          projectId: defaultProject && availableProjects.some(p => p.id === defaultProject) 
                       ? defaultProject 
                       : availableProjects.length > 0 
                           ? availableProjects[0].id 
                           : undefined,
-        assignees: [],
-        date: initialDate ? format(initialDate, "yyyy-MM-dd") : undefined,
-        time: undefined,
-        duration: 30,
-        dependencies: [],
-        dependencyType: "finish-to-start",
-      });
+          assignees: [],
+          date: initialDate ? format(initialDate, "yyyy-MM-dd") : undefined,
+          time: undefined,
+          duration: 30,
+          dependencies: [],
+          dependencyType: "finish-to-start",
+        });
+      }
     }
   }, [isOpen, editingTask, defaultProject, initialDate, form, availableProjects]);
 
@@ -327,7 +330,7 @@ export function TaskDialog({
       // Creating a new task
       const payload: ApiTaskCreatePayload = {
         title: data.title,
-        description: data.description || null,
+        description: data.description || '',
         status: data.status,
         priority: data.priority || null,
         task_type: data.taskType,

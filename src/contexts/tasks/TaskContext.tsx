@@ -148,7 +148,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
         // Determine column based on task status
         const statusToColumnMap: Record<string, string> = {
           'todo': 'column-1',
-          'in-progress': 'column-2',
+          'in_progress': 'column-2',
           'review': 'column-3',
           'done': 'column-4',
           'completed': 'column-4',
@@ -294,18 +294,45 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteTask = (taskId: string) => {
-    // This still needs to be refactored for API calls
-    // TODO: Implement API call for deleteTask in taskActions.ts and use token
-    console.warn("deleteTask in TaskContext still uses local updates. API integration needed.");
-    taskActions.deleteTask(taskId, setTasks, setBoard);
+  const deleteTask = async (taskId: string) => {
+    if (!token) {
+      toast.error("Authentication token not found. Cannot delete task.");
+      return;
+    }
+    try {
+      const success = await taskActions.deleteTask(token, taskId, setTasks, setBoard);
+      if (!success) {
+        console.error("Failed to delete task");
+      }
+    } catch (error) {
+      console.error("Error in TaskProvider deleteTask:", error);
+    }
   };
 
-  const moveTask = (taskId: string, sourceColId: string, destColId: string, newIndex = 0) => {
-    // This still needs to be refactored for API calls
-    // TODO: Implement API call for moveTask in taskActions.ts and use token
-    console.warn("moveTask in TaskContext still uses local updates. API integration needed.");
-    taskActions.moveTask(taskId, sourceColId, destColId, newIndex, board, setBoard, setTasks);
+  const moveTask = (
+    taskId: string, 
+    sourceColId: string, 
+    destColId: string, 
+    newIndex = 0 // newIndex might not be used by moveTaskOnKanban if it only updates status
+  ) => {
+    const taskToMove = tasks.find(t => t.id === taskId);
+    if (!taskToMove) {
+      toast.error("Cannot find task to move.");
+      return;
+    }
+    // Call the refactored action
+    taskActions.moveTaskOnKanban(
+      taskId,
+      sourceColId,
+      destColId,
+      board.columns, // Pass the current board columns from context state
+      taskToMove,    // Pass the found task object
+      token,         // Pass the auth token from context
+      setTasks,      // Pass setTasks from context
+      setBoard       // Pass setBoard from context
+    );
+    // The old console.warn about local updates is now in moveTaskOnKanban or addressed by it.
+    // No need for direct setBoard here as moveTaskOnKanban calls updateTask which handles state.
   };
 
   return (

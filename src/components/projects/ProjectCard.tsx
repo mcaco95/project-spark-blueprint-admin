@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Project } from '@/types/project';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -39,8 +38,41 @@ export function ProjectCard({ project, onDelete, onEdit }: ProjectCardProps) {
   const { t, i18n } = useTranslation(['common', 'projects']);
   const locale = i18n.language === 'es' ? es : enUS;
 
-  const formatDate = (date: Date) => {
-    return format(new Date(date), 'PP', { locale });
+  const formatDate = (dateInput: Date | string) => {
+    if (!dateInput) return '';
+    try {
+      let dateObj: Date;
+      
+      if (typeof dateInput === 'string') {
+        // Handle string dates
+        if (dateInput.includes('T')) {
+          // For ISO strings, create a new date using UTC components
+          const tempDate = new Date(dateInput);
+          dateObj = new Date(
+            tempDate.getUTCFullYear(),
+            tempDate.getUTCMonth(),
+            tempDate.getUTCDate(),
+            12 // Set to noon to avoid any timezone issues
+          );
+        } else {
+          // For YYYY-MM-DD format
+          dateObj = new Date(dateInput);
+        }
+      } else {
+        // For Date objects, create a new date using UTC components
+        dateObj = new Date(
+          dateInput.getUTCFullYear(),
+          dateInput.getUTCMonth(),
+          dateInput.getUTCDate(),
+          12 // Set to noon to avoid any timezone issues
+        );
+      }
+      
+      return format(dateObj, 'PP', { locale });
+    } catch (e) {
+      console.error("Error formatting date:", dateInput, e);
+      return String(dateInput);
+    }
   };
 
   const getStatusLabel = (status: string) => {

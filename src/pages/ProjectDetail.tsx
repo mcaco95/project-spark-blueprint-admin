@@ -268,11 +268,34 @@ const ProjectDetail = () => {
 
   const formatDate = (dateInput: string | Date | undefined | null) => {
     if (!dateInput) return '';
-    console.log('[ProjectDetail] formatDate input:', dateInput, 'type:', typeof dateInput); // Log input to formatDate
     try {
-      const dateObj = typeof dateInput === 'string' ? 
-        (dateInput.includes('T') ? parseISO(dateInput) : parse(dateInput, 'yyyy-MM-dd', new Date())) : 
-        dateInput;
+      let dateObj: Date;
+      
+      if (typeof dateInput === 'string') {
+        // Handle string dates
+        if (dateInput.includes('T')) {
+          // For ISO strings, create a new date using UTC components
+          const tempDate = parseISO(dateInput);
+          dateObj = new Date(
+            tempDate.getUTCFullYear(),
+            tempDate.getUTCMonth(),
+            tempDate.getUTCDate(),
+            12 // Set to noon to avoid any timezone issues
+          );
+        } else {
+          // For YYYY-MM-DD format
+          dateObj = parse(dateInput, 'yyyy-MM-dd', new Date());
+        }
+      } else {
+        // For Date objects, create a new date using UTC components
+        dateObj = new Date(
+          dateInput.getUTCFullYear(),
+          dateInput.getUTCMonth(),
+          dateInput.getUTCDate(),
+          12 // Set to noon to avoid any timezone issues
+        );
+      }
+      
       return format(dateObj, 'PPP'); // 'PPP' gives "MMM d, yyyy"
     } catch (e) {
       console.error("Error formatting date in ProjectDetail:", dateInput, e);

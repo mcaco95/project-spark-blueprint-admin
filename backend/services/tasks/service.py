@@ -147,14 +147,16 @@ def delete_task(task_id: UUID, user_id: UUID) -> bool:
     
     # Authorization check
 
-    session.execute(sqlalchemy_delete(task_assignees_table).where(task_assignees_table.c.task_id == task_id))
-    session.execute(sqlalchemy_delete(task_dependencies_table).where(
-        (task_dependencies_table.c.task_id == task_id) | (task_dependencies_table.c.depends_on_task_id == task_id)
-    ))
+    # Clear relationships first
+    db_task.assignees = []  # Clear assignees relationship
+    db_task.dependencies = []  # Clear dependencies relationship
+    db_task.dependents = []  # Clear dependents relationship
+    session.flush()  # Flush changes to ensure relationships are cleared
     
+    # Now delete the task
     session.delete(db_task)
     session.commit()
-    return True 
+    return True
 
 def get_tasks_paginated(
     page: int = 1,

@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTaskContext } from '@/contexts/tasks/TaskContext';
 import { TaskColumn } from '@/components/kanban/TaskColumn';
-import { TaskDialog } from '@/components/kanban/TaskDialog';
+import { TaskDialog } from '@/components/tasks/TaskEditDialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Task } from '@/types/task';
@@ -24,10 +23,9 @@ export function KanbanView() {
     setIsDialogOpen(true);
   };
 
-  const handleTaskSaved = (task: Task) => {
-    // Close dialog and navigate to the task detail page
+  const handleTaskSaved = (savedTask?: Task) => {
     setIsDialogOpen(false);
-    navigate(`/tasks/${task.id}`);
+    setEditingTask(null);
   };
 
   const handleCloseDialog = () => {
@@ -47,7 +45,7 @@ export function KanbanView() {
       <div className="flex flex-col lg:flex-row gap-4 overflow-x-auto pb-6">
         {board.columnOrder.map(columnId => {
           const column = board.columns[columnId];
-          const tasks = column.taskIds.map(taskId => board.tasks[taskId]);
+          const tasks = column.taskIds.map(taskId => board.tasks[taskId]).filter(Boolean);
           
           return (
             <TaskColumn 
@@ -60,12 +58,14 @@ export function KanbanView() {
         })}
       </div>
 
-      <TaskDialog 
-        isOpen={isDialogOpen} 
-        onClose={handleCloseDialog} 
-        editingTask={editingTask}
-        onSave={handleTaskSaved} 
-      />
+      {isDialogOpen && (
+        <TaskDialog 
+          isOpen={isDialogOpen} 
+          onClose={handleCloseDialog} 
+          editingTask={editingTask}
+          onSave={handleTaskSaved}
+        />
+      )}
     </div>
   );
 }
