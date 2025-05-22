@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
       - ./src:/app/src
     depends_on:
@@ -17,12 +17,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "5001:5000"
+      - "5001:5001"
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/app_db
       - FLASK_APP=app.py
       - FLASK_ENV=development
-      - BACKEND_CORS_ORIGINS=http://localhost,http://5.161.185.159:8080
+      - BACKEND_CORS_ORIGINS=http://localhost:8080,http://5.161.185.159:8080
       - PYTHONPATH=/app
     depends_on:
       - db
@@ -30,7 +30,7 @@ services:
       - ./backend:/app
     command: >
       sh -c "flask db upgrade &&
-             gunicorn --bind 0.0.0.0:5000 wsgi:application --reload"
+             gunicorn --bind 0.0.0.0:5001 wsgi:application --reload"
 
   # Database service
   db:
