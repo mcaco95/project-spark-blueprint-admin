@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # CORS - support multiple origins
-    BACKEND_CORS_ORIGINS: str = "http://localhost,http://5.161.185.159"  # Comma-separated list of allowed origins
+    BACKEND_CORS_ORIGINS: str = "http://localhost:8080,http://5.161.185.159:8080"  # Comma-separated list of allowed origins
 
     class Config:
         case_sensitive = True
