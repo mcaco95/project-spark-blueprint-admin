@@ -106,7 +106,7 @@ def create_app(config_object=settings):
     # Enable CORS for all origins with proper preflight handling
     CORS(app, resources={
         r"/*": {
-            "origins": ["http://localhost:8080", "http://5.161.185.159:8080"],
+            "origins": ["http://localhost", "http://5.161.185.159"],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
             "expose_headers": ["Content-Type", "Authorization"],
