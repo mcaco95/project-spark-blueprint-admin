@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./src:/app/src
     depends_on:
@@ -17,12 +17,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/app_db
       - FLASK_APP=app.py
       - FLASK_ENV=development
-      - BACKEND_CORS_ORIGINS=http://localhost,http://5.161.185.159
+      - BACKEND_CORS_ORIGINS=http://localhost,http://5.161.185.159:8080
       - PYTHONPATH=/app
     depends_on:
       - db
@@ -42,7 +42,7 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=app_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
 volumes:
   postgres_data: 
