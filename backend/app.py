@@ -19,6 +19,7 @@ from services.comments.routes import comments_ns # Changed
 from services.settings.routes import admin_settings_ns # Changed
 from services.admin.routes import admin_projects_ns, admin_tasks_ns, admin_analytics_ns # Changed
 from services.auth.models import User # Changed
+from services.files.routes import files_ns  # Add this import
 # from .services.projects.routes import projects_bp # Example for future
 
 # Custom JSON encoder to handle datetime objects
@@ -129,6 +130,7 @@ def create_app(config_object=settings):
     api.add_namespace(projects_ns, path=f'{settings.API_V1_STR}/projects') # Register projects namespace
     api.add_namespace(tasks_ns, path=f'{settings.API_V1_STR}/tasks') # Register tasks namespace
     api.add_namespace(comments_ns, path=f'{settings.API_V1_STR}/comments') # Register comments namespace
+    api.add_namespace(files_ns, path=f'{settings.API_V1_STR}/files')  # Add files namespace
     # api.add_namespace(projects_ns, path=f'{settings.API_V1_STR}/projects') # Example for future
 
     # Register JWT error handlers for consistent JSON responses

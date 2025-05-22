@@ -69,244 +69,245 @@ export const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        <div className="flex items-center space-x-4 md:space-x-6 mr-4">
-          <Link to="/" className="flex items-center space-x-2">
-            <span className="font-bold text-lg">PM App</span>
-          </Link>
-        </div>
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-14 items-center justify-between">
+          <div className="flex items-center space-x-4 md:space-x-6">
+            <Link to="/" className="flex items-center space-x-2">
+              <span className="font-bold text-lg">PM App</span>
+            </Link>
+          </div>
 
-        {isAuthenticated && (
-          <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                  <Link to="/" className="flex items-center gap-2">
-                    <LayoutDashboard className="h-4 w-4" />
-                    <span>{t('dashboard')}</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                  <Link to="/projects" className="flex items-center gap-2">
-                    <FolderKanban className="h-4 w-4" />
-                    <span>{t('projects')}</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>{t('tasks')}</span>
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[300px] gap-2 p-2 md:w-[400px] md:grid-cols-2">
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/tasks?view=kanban" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <Kanban className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">Kanban</div>
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Drag and drop task management
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/tasks?view=list" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <List className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">List</div>
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Table view of all tasks
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/tasks?view=calendar" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">Calendar</div>
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Monthly calendar view
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/tasks?view=timeline" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <GanttChart className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">Timeline</div>
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            Weekly timeline view
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                  <Link to="/pomodoro" className="flex items-center gap-2">
-                    <Timer className="h-4 w-4" />
-                    <span>Pomodoro</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                  <Link to="/messaging" className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>Messaging</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                  <Link to="/files" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    <span>{t('files')}</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              {user?.role === 'admin' && (
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                    <Link to="/admin" className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>{t('admin')}</span>
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              )}
-
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className={cn(
-                  "flex items-center gap-2",
-                  isActive("/settings") && "bg-accent text-accent-foreground"
-                )}>
-                  <SettingsIcon className="h-4 w-4" />
-                  <span>{t('settings')}</span>
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[300px] gap-2 p-2 md:w-[400px] md:grid-cols-2">
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/settings?tab=profile" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <User className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">{t('settings.profile', 'Profile')}</div>
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            {t('settings.manage_profile', 'Manage your personal information')}
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/settings?tab=appearance" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <Sun className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">{t('settings.appearance', 'Appearance')}</div>
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            {t('settings.customize_theme', 'Customize the app appearance')}
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/settings?tab=notifications" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <Bell className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">{t('settings.notifications', 'Notifications')}</div>
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            {t('settings.notification_preferences', 'Manage notification settings')}
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/settings?tab=language" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div className="flex items-center">
-                            <Languages className="h-4 w-4 mr-2" />
-                            <div className="text-sm font-medium leading-none">{t('settings.language', 'Language')}</div>
-                          </div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                            {t('settings.language_preferences', 'Change language settings')}
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
-        )}
-
-        <div className="ml-auto flex items-center space-x-4">
           {isAuthenticated && (
-            <NavbarPomodoroTimer />
+            <div className="flex-1 flex items-center justify-between">
+              <NavigationMenu className="hidden md:flex">
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                      <Link to="/" className="flex items-center gap-2">
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span>{t('dashboard')}</span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                      <Link to="/projects" className="flex items-center gap-2">
+                        <FolderKanban className="h-4 w-4" />
+                        <span>{t('projects')}</span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{t('tasks')}</span>
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid w-[300px] gap-2 p-2 md:w-[400px] md:grid-cols-2">
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link to="/tasks?view=kanban" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="flex items-center">
+                                <Kanban className="h-4 w-4 mr-2" />
+                                <div className="text-sm font-medium leading-none">Kanban</div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Drag and drop task management
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link to="/tasks?view=list" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="flex items-center">
+                                <List className="h-4 w-4 mr-2" />
+                                <div className="text-sm font-medium leading-none">List</div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Table view of all tasks
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link to="/tasks?view=calendar" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="flex items-center">
+                                <Calendar className="h-4 w-4 mr-2" />
+                                <div className="text-sm font-medium leading-none">Calendar</div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Monthly calendar view
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link to="/tasks?view=timeline" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="flex items-center">
+                                <GanttChart className="h-4 w-4 mr-2" />
+                                <div className="text-sm font-medium leading-none">Timeline</div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Weekly timeline view
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                      <Link to="/pomodoro" className="flex items-center gap-2">
+                        <Timer className="h-4 w-4" />
+                        <span>Pomodoro</span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                      <Link to="/messaging" className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        <span>Messaging</span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                      <Link to="/files" className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span>{t('files')}</span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {user?.role === 'admin' && (
+                    <NavigationMenuItem>
+                      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                        <Link to="/admin" className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <span>{t('admin')}</span>
+                        </Link>
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  )}
+
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className={cn(
+                      "flex items-center gap-2",
+                      isActive("/settings") && "bg-accent text-accent-foreground"
+                    )}>
+                      <SettingsIcon className="h-4 w-4" />
+                      <span>{t('settings')}</span>
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid w-[300px] gap-2 p-2 md:w-[400px] md:grid-cols-2">
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link to="/settings?tab=profile" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="flex items-center">
+                                <User className="h-4 w-4 mr-2" />
+                                <div className="text-sm font-medium leading-none">{t('settings.profile', 'Profile')}</div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                {t('settings.manage_profile', 'Manage your personal information')}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link to="/settings?tab=appearance" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="flex items-center">
+                                <Sun className="h-4 w-4 mr-2" />
+                                <div className="text-sm font-medium leading-none">{t('settings.appearance', 'Appearance')}</div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                {t('settings.customize_theme', 'Customize the app appearance')}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link to="/settings?tab=notifications" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="flex items-center">
+                                <Bell className="h-4 w-4 mr-2" />
+                                <div className="text-sm font-medium leading-none">{t('settings.notifications', 'Notifications')}</div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                {t('settings.notification_preferences', 'Manage notification settings')}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        <li>
+                          <NavigationMenuLink asChild>
+                            <Link to="/settings?tab=language" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="flex items-center">
+                                <Languages className="h-4 w-4 mr-2" />
+                                <div className="text-sm font-medium leading-none">{t('settings.language', 'Language')}</div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                {t('settings.language_preferences', 'Change language settings')}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+
+              <div className="flex items-center space-x-4">
+                <NavbarPomodoroTimer />
+                <LanguageSwitcher />
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.avatar} alt={user?.name} />
+                        <AvatarFallback>{user?.name ? getInitials(user.name) : '??'}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user?.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" className="flex items-center cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>{t('profile')}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>{t('logout')}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           )}
-          
-          <LanguageSwitcher />
-          
-          {isAuthenticated && user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="flex items-center cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>{t('profile')}</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>{t('logout')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
+
+          {!isAuthenticated && (
             <Button asChild variant="outline" size="sm">
               <Link to="/login">
                 {t('auth.login')}

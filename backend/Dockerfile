@@ -8,7 +8,8 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     FLASK_APP=app.py \
-    FLASK_ENV=development
+    FLASK_ENV=development \
+    PYTHONPATH=/app
 
 # Install system dependencies
 RUN apt-get update \

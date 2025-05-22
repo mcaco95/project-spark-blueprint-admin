@@ -23,12 +23,13 @@ services:
       - FLASK_APP=app.py
       - FLASK_ENV=development
       - BACKEND_CORS_ORIGINS=http://localhost,http://5.161.185.159
+      - PYTHONPATH=/app
     depends_on:
       - db
     volumes:
       - ./backend:/app
     command: >
-      sh -c "python init_db.py &&
+      sh -c "flask db upgrade &&
              gunicorn --bind 0.0.0.0:5000 wsgi:application --reload"
 
   # Database service

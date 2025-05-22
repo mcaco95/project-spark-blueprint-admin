@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { useToast } from "@/components/ui/use-toast";
 import { Task } from '@/types/task';
 import { useTaskContext } from '@/contexts/tasks/TaskContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Sound assets
 const NOTIFICATION_SOUNDS = {
@@ -57,6 +58,7 @@ type PomodoroContextType = {
   activeTaskIds: string[];
   addTaskToActive: (taskId: string) => void;
   removeTaskFromActive: (taskId: string) => void;
+  handleTimerComplete: () => void;
 };
 
 const DEFAULT_SETTINGS: TimerSettings = {
@@ -77,19 +79,54 @@ const PomodoroContext = createContext<PomodoroContextType | undefined>(undefined
 export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const { getAllTasks } = useTaskContext();
+  const { isAuthenticated } = useAuth();
   const [settings, setSettings] = useState<TimerSettings>(() => {
     // Load settings from localStorage or use defaults
     const savedSettings = localStorage.getItem('pomodoroSettings');
     return savedSettings ? JSON.parse(savedSettings) : DEFAULT_SETTINGS;
   });
 
-  const [timerState, setTimerState] = useState<TimerState>('idle');
-  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+  // Load initial states from localStorage
+  const [timerState, setTimerState] = useState<TimerState>(() => {
+    const saved = localStorage.getItem('pomodoroTimerState');
+    const savedPrevState = localStorage.getItem('pomodoroPreviousState');
+    if (saved) {
+      const state = JSON.parse(saved) as TimerState;
+      // If it was paused before reload, keep it paused
+      if (state === 'paused' && savedPrevState) {
+        return 'paused';
+      }
+      return state;
+    }
+    return 'idle';
+  });
+  
+  const [secondsLeft, setSecondsLeft] = useState<number>(() => {
+    const saved = localStorage.getItem('pomodoroSecondsLeft');
+    return saved ? parseInt(saved) : 0;
+  });
+  
+  const [targetSeconds, setTargetSeconds] = useState<number>(() => {
+    const saved = localStorage.getItem('pomodoroTargetSeconds');
+    return saved ? parseInt(saved) : 0;
+  });
+  
+  const [completedPomodoros, setCompletedPomodoros] = useState<number>(() => {
+    const saved = localStorage.getItem('pomodoroCompletedPomodoros');
+    return saved ? parseInt(saved) : 0;
+  });
+  
+  const [completedCycles, setCompletedCycles] = useState<number>(() => {
+    const saved = localStorage.getItem('pomodoroCompletedCycles');
+    return saved ? parseInt(saved) : 0;
+  });
+  
+  const [currentTask, setCurrentTask] = useState<Task | null>(() => {
+    const saved = localStorage.getItem('pomodoroCurrentTask');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [intervalId, setIntervalId] = useState<number | null>(null);
-  const [currentTask, setCurrentTask] = useState<Task | null>(null);
-  const [completedCycles, setCompletedCycles] = useState<number>(0);
-  const [completedPomodoros, setCompletedPomodoros] = useState<number>(0);
-  const [targetSeconds, setTargetSeconds] = useState<number>(0);
   const [taskPomodoros, setTaskPomodoros] = useState<TaskPomodoro[]>(() => {
     const saved = localStorage.getItem('taskPomodoros');
     return saved ? JSON.parse(saved) : [];
@@ -97,6 +134,12 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
   const [activeTaskIds, setActiveTaskIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('activeTaskIds');
     return saved ? JSON.parse(saved) : [];
+  });
+  
+  // Store the previous state before pausing
+  const [previousState, setPreviousState] = useState<TimerState>(() => {
+    const saved = localStorage.getItem('pomodoroPreviousState');
+    return saved ? JSON.parse(saved) : 'focus';
   });
   
   // Calculate progress percentage (0-100)
@@ -110,6 +153,35 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
   }, [settings]);
 
+  // Save timer state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('pomodoroTimerState', JSON.stringify(timerState));
+  }, [timerState]);
+
+  useEffect(() => {
+    localStorage.setItem('pomodoroSecondsLeft', secondsLeft.toString());
+  }, [secondsLeft]);
+
+  useEffect(() => {
+    localStorage.setItem('pomodoroTargetSeconds', targetSeconds.toString());
+  }, [targetSeconds]);
+
+  useEffect(() => {
+    localStorage.setItem('pomodoroCompletedPomodoros', completedPomodoros.toString());
+  }, [completedPomodoros]);
+
+  useEffect(() => {
+    localStorage.setItem('pomodoroCompletedCycles', completedCycles.toString());
+  }, [completedCycles]);
+
+  useEffect(() => {
+    if (currentTask) {
+      localStorage.setItem('pomodoroCurrentTask', JSON.stringify(currentTask));
+    } else {
+      localStorage.removeItem('pomodoroCurrentTask');
+    }
+  }, [currentTask]);
+
   // Save task pomodoros to localStorage when they change
   useEffect(() => {
     localStorage.setItem('taskPomodoros', JSON.stringify(taskPomodoros));
@@ -119,6 +191,11 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem('activeTaskIds', JSON.stringify(activeTaskIds));
   }, [activeTaskIds]);
+
+  // Save previous state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('pomodoroPreviousState', JSON.stringify(previousState));
+  }, [previousState]);
 
   // Get task pomodoro information
   const getTaskPomodoros = useCallback((taskId: string) => {
@@ -194,8 +271,78 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
     setActiveTaskIds(prev => prev.filter(id => id !== taskId));
   }, []);
 
+  // Timer control functions
+  function startFocus() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      setIntervalId(null);
+    }
+    
+    const focusSeconds = settings.focusMinutes * 60;
+    setSecondsLeft(focusSeconds);
+    setTargetSeconds(focusSeconds);
+    setTimerState('focus');
+    
+    if (settings.soundEnabled) {
+      NOTIFICATION_SOUNDS.start.play().catch(e => console.error("Error playing sound:", e));
+    }
+    
+    toast({
+      title: "Focus session started",
+      description: currentTask ? `Working on: ${currentTask.title}` : '',
+    });
+  }
+
+  function startShortBreak() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      setIntervalId(null);
+    }
+    
+    const breakSeconds = settings.shortBreakMinutes * 60;
+    setSecondsLeft(breakSeconds);
+    setTargetSeconds(breakSeconds);
+    setTimerState('shortBreak');
+    
+    if (settings.soundEnabled) {
+      NOTIFICATION_SOUNDS.break.play().catch(e => console.error("Error playing sound:", e));
+    }
+    
+    toast({
+      title: "Short break started",
+      description: "Take a quick breather",
+    });
+  }
+
+  function startLongBreak() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      setIntervalId(null);
+    }
+    
+    const breakSeconds = settings.longBreakMinutes * 60;
+    setSecondsLeft(breakSeconds);
+    setTargetSeconds(breakSeconds);
+    setTimerState('longBreak');
+    
+    if (settings.soundEnabled) {
+      NOTIFICATION_SOUNDS.break.play().catch(e => console.error("Error playing sound:", e));
+    }
+    
+    toast({
+      title: "Long break started",
+      description: "Take a well-deserved longer break",
+    });
+  }
+
   // Handle timer completion
-  const handleTimerComplete = useCallback(() => {
+  function handleTimerComplete() {
+    // Clear any existing interval
+    if (intervalId) {
+      clearInterval(intervalId);
+      setIntervalId(null);
+    }
+
     if (timerState === 'focus') {
       // Completed a focus session
       setCompletedPomodoros(prev => prev + 1);
@@ -205,8 +352,15 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
         incrementTaskCompletedPomodoros(currentTask.id);
       }
       
-      const newCycleCount = completedCycles + 1;
-      setCompletedCycles(newCycleCount);
+      // Calculate if it's time for a long break
+      // We check if the NEXT cycle would be complete (hence the + 1)
+      const nextCycleCount = completedPomodoros + 1;
+      const isLongBreakTime = nextCycleCount % settings.cyclesBeforeLongBreak === 0;
+      
+      // Update cycles only when we've completed the set number of pomodoros
+      if (isLongBreakTime) {
+        setCompletedCycles(prev => prev + 1);
+      }
       
       // Play sound
       if (settings.soundEnabled) {
@@ -229,11 +383,13 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
       
       // Start break
       if (settings.autoStartBreaks) {
-        if (newCycleCount % settings.cyclesBeforeLongBreak === 0) {
-          startLongBreak();
-        } else {
-          startShortBreak();
-        }
+        setTimeout(() => {
+          if (isLongBreakTime) {
+            startLongBreak();
+          } else {
+            startShortBreak();
+          }
+        }, 500); // Small delay to ensure state updates are complete
       } else {
         setTimerState('idle');
       }
@@ -259,12 +415,14 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
       
       // Start next focus session
       if (settings.autoStartFocus) {
-        startFocus();
+        setTimeout(() => {
+          startFocus();
+        }, 500); // Small delay to ensure state updates are complete
       } else {
         setTimerState('idle');
       }
     }
-  }, [timerState, completedCycles, settings, currentTask, toast, incrementTaskCompletedPomodoros]);
+  }
 
   // Request notification permission when needed
   useEffect(() => {
@@ -277,7 +435,15 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
 
   // Timer tick function
   useEffect(() => {
-    if (isTimerActive && secondsLeft > 0) {
+    // Only start interval if timer is active and in a running state
+    const isRunningState = timerState === 'focus' || timerState === 'shortBreak' || timerState === 'longBreak';
+    
+    if (isRunningState && secondsLeft > 0) {
+      // Clear any existing interval first
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      
       const id = window.setInterval(() => {
         setSecondsLeft(prev => {
           if (prev <= 1) {
@@ -291,70 +457,20 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
       
       setIntervalId(id);
       
-      return () => clearInterval(id);
+      return () => {
+        clearInterval(id);
+        setIntervalId(null);
+      };
     }
     
+    // Cleanup on unmount or when timer state changes
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (intervalId) {
+        clearInterval(intervalId);
+        setIntervalId(null);
+      }
     };
-  }, [isTimerActive, secondsLeft, handleTimerComplete, intervalId]);
-
-  // Start focus session
-  const startFocus = useCallback(() => {
-    if (intervalId) clearInterval(intervalId);
-    
-    const focusSeconds = settings.focusMinutes * 60;
-    setSecondsLeft(focusSeconds);
-    setTargetSeconds(focusSeconds);
-    setTimerState('focus');
-    
-    if (settings.soundEnabled) {
-      NOTIFICATION_SOUNDS.start.play().catch(e => console.error("Error playing sound:", e));
-    }
-    
-    toast({
-      title: "Focus session started",
-      description: currentTask ? `Working on: ${currentTask.title}` : '',
-    });
-  }, [settings, intervalId, currentTask, toast]);
-
-  // Start short break
-  const startShortBreak = useCallback(() => {
-    if (intervalId) clearInterval(intervalId);
-    
-    const breakSeconds = settings.shortBreakMinutes * 60;
-    setSecondsLeft(breakSeconds);
-    setTargetSeconds(breakSeconds);
-    setTimerState('shortBreak');
-    
-    if (settings.soundEnabled) {
-      NOTIFICATION_SOUNDS.break.play().catch(e => console.error("Error playing sound:", e));
-    }
-    
-    toast({
-      title: "Short break started",
-      description: "Take a quick breather",
-    });
-  }, [settings, intervalId, toast]);
-
-  // Start long break
-  const startLongBreak = useCallback(() => {
-    if (intervalId) clearInterval(intervalId);
-    
-    const breakSeconds = settings.longBreakMinutes * 60;
-    setSecondsLeft(breakSeconds);
-    setTargetSeconds(breakSeconds);
-    setTimerState('longBreak');
-    
-    if (settings.soundEnabled) {
-      NOTIFICATION_SOUNDS.break.play().catch(e => console.error("Error playing sound:", e));
-    }
-    
-    toast({
-      title: "Long break started",
-      description: "Take a well-deserved longer break",
-    });
-  }, [settings, intervalId, toast]);
+  }, [timerState, secondsLeft]);
 
   // Pause the timer
   const pauseTimer = useCallback(() => {
@@ -362,19 +478,22 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
       clearInterval(intervalId);
       setIntervalId(null);
     }
+    // Store the current state before pausing
+    const isRunningState = timerState === 'focus' || timerState === 'shortBreak' || timerState === 'longBreak';
+    if (isRunningState) {
+      setPreviousState(timerState);
+    }
     setTimerState('paused');
-  }, [intervalId]);
+  }, [intervalId, timerState]);
 
   // Resume the timer
   const resumeTimer = useCallback(() => {
-    if (timerState === 'paused') {
-      setTimerState(prevState => {
-        // Get the previous active state (before pausing)
-        const activeState = prevState === 'paused' ? 'focus' : prevState;
-        return activeState;
-      });
+    const isValidPreviousState = previousState === 'focus' || previousState === 'shortBreak' || previousState === 'longBreak';
+    if (timerState === 'paused' && isValidPreviousState) {
+      // Restore the previous state
+      setTimerState(previousState);
     }
-  }, [timerState]);
+  }, [timerState, previousState]);
 
   // Reset the timer
   const resetTimer = useCallback(() => {
@@ -406,6 +525,13 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   }, []);
 
+  // Handle logout - pause timer and save state
+  useEffect(() => {
+    if (!isAuthenticated && isTimerActive) {
+      pauseTimer();
+    }
+  }, [isAuthenticated, isTimerActive, pauseTimer]);
+
   // Provide the context value
   const contextValue = {
     timerState,
@@ -434,6 +560,7 @@ export const PomodoroProvider = ({ children }: { children: ReactNode }) => {
     activeTaskIds,
     addTaskToActive,
     removeTaskFromActive,
+    handleTimerComplete,
   };
 
   return (

@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from core.db import db
 from services.auth.models import User
+from services.files.models import File, Folder  # Add import for File and Folder models
 # Import Task model
 # from backend.services.tasks.models import Task # This will cause circular dependency if Task imports Project too early.
                                                # Relationships can be defined using strings for model names.
@@ -68,6 +69,10 @@ class Project(db.Model):
         back_populates="project", 
         cascade="all, delete-orphan"
     )
+
+    # File management relationships
+    files = relationship("File", back_populates="project", cascade="all, delete-orphan")
+    folders = relationship("Folder", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Project {self.name} ({self.id})>" 

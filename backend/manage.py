@@ -19,8 +19,10 @@ from app import create_app   # Flask app factory
 
 # Import models for migrations
 from services.auth.models import User
-from services.projects.models import Project # Import the new Project model
-# from services.tasks.models import Task     # Example for future models
+from services.projects.models import Project
+from services.tasks.models import Task
+from services.comments.models import Comment
+from services.files.models import File, Folder, FileActivity  # Add file models
 
 # Initialize Flask app
 app = create_app(settings)
@@ -41,11 +43,9 @@ migrate = Migrate(app, db)
 @click.option('--name', prompt="Admin Name", help="The name for the new admin user.")
 def create_admin_user(email, password, name):
     """Creates a new admin user."""
-    from services.auth.service import create_user, get_password_hash
+    from services.auth.service import create_user
     from services.auth.schemas import RegisterRequest
     
-    app = create_app(settings) # Create app instance to work within its context
-
     # Check if user already exists
     if User.query.filter_by(email=email).first():
         click.echo(f"User {email} already exists")

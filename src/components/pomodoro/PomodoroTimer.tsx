@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { usePomodoroContext, TimerState } from '@/contexts/PomodoroContext';
 import {
@@ -21,11 +20,11 @@ import PomodoroTaskSelector from './PomodoroTaskSelector';
 const getTimerStateColor = (state: TimerState): string => {
   switch (state) {
     case 'focus':
-      return 'bg-[#ea384c]';
+      return 'bg-red-500';
     case 'shortBreak':
-      return 'bg-[#F2FCE2]';
+      return 'bg-green-500';
     case 'longBreak':
-      return 'bg-[#D3E4FD]';
+      return 'bg-blue-500';
     default:
       return 'bg-gray-500';
   }
@@ -34,11 +33,9 @@ const getTimerStateColor = (state: TimerState): string => {
 const getTimerStateTextColor = (state: TimerState): string => {
   switch (state) {
     case 'focus':
-      return 'text-white';
     case 'shortBreak':
-      return 'text-gray-800';
     case 'longBreak':
-      return 'text-gray-800';
+      return 'text-white';
     default:
       return 'text-white';
   }
@@ -161,7 +158,7 @@ export const PomodoroTimer: React.FC = () => {
             
             <Progress 
               value={progress} 
-              className={`h-2 mb-4 ${timerState !== 'idle' ? getTimerStateColor(timerState) : ''}`}
+              className={`h-3 mb-4 transition-all duration-300 ${timerState !== 'idle' ? getTimerStateColor(timerState) : ''}`}
             />
           </div>
 

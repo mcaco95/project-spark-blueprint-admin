@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { usePomodoroContext, TimerState } from '@/contexts/PomodoroContext';
 import { 
@@ -7,7 +6,8 @@ import {
   Clock, 
   Timer as TimerIcon,
   ChevronDown, 
-  ChevronUp 
+  ChevronUp,
+  CheckCircle 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +71,8 @@ const NavbarPomodoroTimer: React.FC = () => {
     resumeTimer,
     startFocus,
     isTimerActive,
-    currentTask
+    currentTask,
+    handleTimerComplete
   } = usePomodoroContext();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -84,6 +85,12 @@ const NavbarPomodoroTimer: React.FC = () => {
       pauseTimer();
     } else {
       startFocus();
+    }
+  };
+
+  const handleFinishFocus = () => {
+    if (timerState === 'focus') {
+      handleTimerComplete();
     }
   };
 
@@ -121,7 +128,7 @@ const NavbarPomodoroTimer: React.FC = () => {
         </TooltipProvider>
 
         <div className={`px-2 flex items-center ${isTimerActive ? getTimerStateTextColor(timerState) : ''}`}>
-          {isTimerActive && (
+          {secondsLeft > 0 && (
             <>
               <span className="text-sm font-medium mr-1">{formatTime(secondsLeft)}</span>
               <Badge 
@@ -134,12 +141,32 @@ const NavbarPomodoroTimer: React.FC = () => {
           )}
         </div>
 
+        {timerState === 'focus' && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={`h-8 w-8 ${isTimerActive ? getTimerStateTextColor(timerState) : ''}`}
+                  onClick={handleFinishFocus}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Finish focus session
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
         <Drawer open={isExpanded} onOpenChange={setIsExpanded}>
           <DrawerTrigger asChild>
             <Button 
               variant="ghost" 
               size="icon" 
-              className={`h-8 w-8 ${isTimerActive ? getTimerStateTextColor(timerState) : ''}`}
+              className={`h-8 w-8 ${secondsLeft > 0 ? getTimerStateTextColor(timerState) : ''}`}
             >
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>

@@ -23,6 +23,7 @@ from services.auth.models import User
 from services.projects.models import Project
 from services.tasks.models import Task
 from services.comments.models import Comment
+from services.files.models import File, Folder, FileActivity  # Add the new models
 
 def init_database():
     """Initialize the database and run migrations"""
